@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useApp();
+  const [email, setEmail] = useState("marc.dubois@finanzas.com");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    login(email);
+    navigate('/');
+  };
+
   return (
     <div className="flex w-full h-screen">
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#171211] overflow-hidden">
@@ -40,17 +50,16 @@ const LoginPage: React.FC = () => {
           </div>
           <form
             className="space-y-6"
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate('/');
-            }}
+            onSubmit={handleLogin}
           >
             <div className="flex flex-col gap-2">
               <label className="text-[#171211] dark:text-white text-sm font-medium">Identifiant ou E-mail</label>
               <input
-                className="form-input w-full rounded-lg border-[#e5dcdc] dark:border-gray-700 bg-white dark:bg-gray-800 h-14 p-[15px] focus:ring-primary"
-                defaultValue="marc.dubois@finanzas.com"
+                className="form-input w-full rounded-lg border-[#e5dcdc] dark:border-gray-700 bg-white dark:bg-gray-800 h-14 p-[15px] focus:ring-primary text-slate-900 dark:text-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
+                required
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -61,7 +70,7 @@ const LoginPage: React.FC = () => {
                 </a>
               </div>
               <input
-                className="form-input w-full rounded-lg border-[#e5dcdc] dark:border-gray-700 bg-white dark:bg-gray-800 h-14 p-[15px] focus:ring-primary"
+                className="form-input w-full rounded-lg border-[#e5dcdc] dark:border-gray-700 bg-white dark:bg-gray-800 h-14 p-[15px] focus:ring-primary text-slate-900 dark:text-white"
                 defaultValue="password123"
                 type="password"
               />

@@ -1,8 +1,22 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 
 const VirementConfirmPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { performTransfer } = useApp();
+  
+  // Get data passed from previous screen, default if direct access
+  const state = location.state as { amount: number, converted: string } || { amount: 1000, converted: "1079.30" };
+  const amount = state.amount;
+  const convertedAmount = state.converted;
+
+  const handleConfirm = () => {
+    // Actually deduct money and add transaction
+    performTransfer(amount, "Jean Dupont");
+    navigate('/virement-success', { state: { amount } });
+  };
 
   return (
     <div className="flex-1 px-4 py-8 lg:px-8 xl:px-40 overflow-y-auto bg-background-light dark:bg-background-dark relative">
@@ -58,7 +72,7 @@ const VirementConfirmPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                     <span className="text-slate-500">Montant envoyé</span>
-                    <span className="text-xl font-bold text-slate-900 dark:text-white">1 000,00 EUR</span>
+                    <span className="text-xl font-bold text-slate-900 dark:text-white">{amount} EUR</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                     <span className="text-slate-500">Taux de change</span>
@@ -70,7 +84,7 @@ const VirementConfirmPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center py-3">
                     <span className="text-slate-500 font-semibold">Le bénéficiaire reçoit</span>
-                    <span className="text-2xl font-black text-primary">1 079,30 USD</span>
+                    <span className="text-2xl font-black text-primary">{convertedAmount} USD</span>
                   </div>
                 </div>
               </div>
@@ -116,7 +130,7 @@ const VirementConfirmPage: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Authentification Forte</h2>
               <p className="text-slate-500 dark:text-slate-400 mb-8">
-                Pour valider votre virement de <span className="font-bold text-slate-900 dark:text-white">1 000,00 EUR</span>, une confirmation est requise.
+                Pour valider votre virement de <span className="font-bold text-slate-900 dark:text-white">{amount} EUR</span>, une confirmation est requise.
               </p>
               
               <div className="space-y-4">
@@ -155,7 +169,7 @@ const VirementConfirmPage: React.FC = () => {
                     ))}
                   </div>
                   <button 
-                    onClick={() => navigate('/virement-success')}
+                    onClick={handleConfirm}
                     className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition-colors shadow-md active:scale-[0.98]"
                   >
                     Confirmer le virement

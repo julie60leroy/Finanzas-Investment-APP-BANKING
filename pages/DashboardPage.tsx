@@ -1,9 +1,17 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useApp } from '../context/AppContext';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, transactions } = useApp();
+
+  // Calculate totals
+  const totalBalance = (user?.accounts.checking || 0) + (user?.accounts.savings || 0);
+  const formattedBalance = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(totalBalance);
+  const checkingFormatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(user?.accounts.checking || 0);
+  const savingsFormatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(user?.accounts.savings || 0);
 
   const data = [
     { name: 'Logement', value: 35, color: '#D92D20' },
@@ -12,18 +20,15 @@ const DashboardPage: React.FC = () => {
     { name: 'Autres', value: 15, color: '#f59e0b' },
   ];
 
-  const transactions = [
-    { name: "Uber Eats", cat: "Alimentation", amt: "-32,50 €", color: "blue" },
-    { name: "Spotify", cat: "Loisirs", amt: "-9,99 €", color: "emerald" },
-    { name: "Sophie Martin", cat: "Virement", amt: "+45,00 €", color: "purple", plus: true }
-  ];
+  // Get recent transactions (first 5)
+  const recentTransactions = transactions.slice(0, 5);
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 md:p-10">
       <div className="max-w-7xl mx-auto flex flex-col gap-8">
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Bonjour, Marc</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Bonjour, {user?.name.split(' ')[0]}</h2>
             <p className="text-slate-500 text-lg">Voici votre situation financière aujourd'hui.</p>
           </div>
           <div className="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col md:flex-row md:items-center gap-6 min-w-[300px] shadow-sm relative overflow-hidden group">
@@ -31,7 +36,7 @@ const DashboardPage: React.FC = () => {
             <div className="flex flex-col gap-1 relative z-10">
               <span className="text-sm font-medium text-slate-500 uppercase tracking-wider">Solde Total Estimé</span>
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">124 500,00 €</span>
+                <span className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{formattedBalance}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-200 md:ml-auto relative z-10">
@@ -50,7 +55,7 @@ const DashboardPage: React.FC = () => {
               <span className="material-symbols-outlined text-slate-400">more_horiz</span>
             </div>
             <h4 className="text-slate-500 text-sm font-medium">Compte Courant</h4>
-            <p className="text-2xl font-bold text-slate-900">2 450,00 €</p>
+            <p className="text-2xl font-bold text-slate-900">{checkingFormatted}</p>
             <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
               <span>**** 4829</span>
               <span className="text-green-600 font-bold">+ 450€</span>
@@ -64,7 +69,7 @@ const DashboardPage: React.FC = () => {
               <span className="material-symbols-outlined text-slate-400">more_horiz</span>
             </div>
             <h4 className="text-slate-500 text-sm font-medium">Compte Épargne</h4>
-            <p className="text-2xl font-bold text-slate-900">50 000,00 €</p>
+            <p className="text-2xl font-bold text-slate-900">{savingsFormatted}</p>
             <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
               <span>Finanzas Gold</span>
               <span className="text-green-600 font-bold">+3.5% APY</span>
@@ -155,19 +160,24 @@ const DashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {transactions.map((tx, idx) => (
-                    <tr key={idx}>
+                  {recentTransactions.map((tx) => (
+                    <tr key={tx.id}>
                       <td className="py-5 font-bold text-slate-900">{tx.name}</td>
                       <td className="py-5">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold bg-${tx.color}-50 text-${tx.color}-700`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold bg-slate-50 text-slate-700`}>
                           {tx.cat}
                         </span>
                       </td>
-                      <td className={`py-5 text-right font-bold ${tx.plus ? 'text-green-600' : 'text-slate-900'}`}>
-                        {tx.amt}
+                      <td className={`py-5 text-right font-bold ${tx.amt > 0 ? 'text-green-600' : 'text-slate-900'}`}>
+                        {tx.amt > 0 ? '+' : ''} {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(tx.amt)}
                       </td>
                     </tr>
                   ))}
+                  {recentTransactions.length === 0 && (
+                      <tr>
+                          <td colSpan={3} className="py-8 text-center text-slate-400">Aucune transaction récente</td>
+                      </tr>
+                  )}
                 </tbody>
               </table>
             </div>

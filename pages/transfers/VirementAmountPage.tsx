@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 
 const VirementAmountPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useApp();
+  const [amount, setAmount] = useState(1000);
+  
+  // Rate calc
+  const rate = 1.0842;
+  const fees = 4.52;
+  const convertedAmount = (amount - fees) * rate;
+
+  const handleNext = () => {
+    // Validate balance
+    if (user && user.accounts.checking < amount) {
+        alert("Solde insuffisant !");
+        return;
+    }
+    // Navigate with state
+    navigate('/virement-confirm', { state: { amount: amount, converted: convertedAmount.toFixed(2) } });
+  };
+
   return (
     <div className="flex-1 px-4 py-8 lg:px-8 xl:px-40 overflow-y-auto bg-background-light dark:bg-background-dark">
       <div className="mx-auto max-w-6xl">
@@ -55,13 +74,14 @@ const VirementAmountPage: React.FC = () => {
               
               {/* Source Amount */}
               <div className="relative">
-                <label className="mb-2 block text-sm font-medium text-slate-500">Vous envoyez</label>
+                <label className="mb-2 block text-sm font-medium text-slate-500">Vous envoyez (Solde: {user?.accounts.checking} €)</label>
                 <div className="flex items-center rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all p-1">
                   <input 
                     className="w-full bg-transparent border-none px-4 py-4 text-2xl font-bold text-slate-900 dark:text-white placeholder-slate-300 focus:ring-0" 
                     placeholder="0.00" 
                     type="number" 
-                    defaultValue="1000"
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
                   />
                   <div className="flex items-center gap-2 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-2 mr-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm transition-colors">
                     <div className="size-6 overflow-hidden rounded-full bg-slate-200 bg-center bg-cover" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCrJbUIjNWHX6eGPoZ-BCEyuhNayCNI1VwPZeYYkFCnDvUvqod3swFJvYNqq_g0QhF9_VEJLsx1VlKT_tjrxWTBHjsX-SQhdmRaMBwO-Wz-Yl-VOiW56iwGoWXBftrffdaUwcs6N5kWSxDlayZQNvjjeMeYRCl-vpjH2js5RF-tJGOOKy4N5QjRyiI3pcwsOkUpLMTXkQ7BB1L1bpHSALrYUP88WmC9GrouEvT2vLpAeQp7nJzlsb3by7RJ8QUoIrwoWIK96EWeofs")'}}></div>
@@ -82,7 +102,7 @@ const VirementAmountPage: React.FC = () => {
                       <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
                         <span className="material-symbols-outlined text-[14px]">remove</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">4.52 EUR</span>
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{fees} EUR</span>
                       <span className="text-sm text-slate-400">Frais de virement</span>
                     </div>
                   </div>
@@ -93,7 +113,7 @@ const VirementAmountPage: React.FC = () => {
                       <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
                         <span className="material-symbols-outlined text-[14px]">drag_handle</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">995.48 EUR</span>
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{(amount - fees).toFixed(2)} EUR</span>
                       <span className="text-sm text-slate-400">Montant converti</span>
                     </div>
                   </div>
@@ -104,7 +124,7 @@ const VirementAmountPage: React.FC = () => {
                       <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
                         <span className="material-symbols-outlined text-[14px]">close</span>
                       </div>
-                      <span className="text-sm font-bold text-primary">1.0842</span>
+                      <span className="text-sm font-bold text-primary">{rate}</span>
                       <span className="text-sm text-slate-500">Taux de change garanti (24h)</span>
                       <span className="material-symbols-outlined text-[16px] text-primary cursor-help" title="Taux en temps réel">info</span>
                     </div>
@@ -121,7 +141,7 @@ const VirementAmountPage: React.FC = () => {
                     className="w-full bg-transparent border-none px-4 py-4 text-2xl font-bold text-slate-900 dark:text-white placeholder-slate-300 focus:ring-0" 
                     readOnly 
                     type="number" 
-                    value="1079.30"
+                    value={convertedAmount > 0 ? convertedAmount.toFixed(2) : 0}
                   />
                   <div className="flex items-center gap-2 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-2 mr-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm transition-colors">
                     <div className="size-6 overflow-hidden rounded-full bg-slate-200 bg-center bg-cover" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAvvZ2_d_Fk-rAfBUJnBoHx3XkjzsENeB7xCganDGdQ7_3n71GI93Jik_AWGJVwCqY_DJ7BG3N284BOFAjkUPOtzqQWIf6kAxgJtYOv8KfTG4Bb4dQT36n2PZY5FDacwHv00Frr1OjJYXzyfz1t_jQaVDQrr6IGMs-cmdXXJCp-REIf5WfdmF79H2ZHiz8Q_O6fhE8-9oMsBWA1U6B0SfjYXhYv3EeIDwa5FTh-84rd_E-EvYhs1qSe3QgS1O-Qs73FU8kkWmeq86g")'}}></div>
@@ -145,7 +165,7 @@ const VirementAmountPage: React.FC = () => {
 
                 {/* Main CTA */}
                 <button 
-                  onClick={() => navigate('/virement-confirm')}
+                  onClick={handleNext}
                   className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-primary px-8 py-4 text-white shadow-lg transition-all hover:bg-primary-hover active:scale-[0.98]"
                 >
                   <span className="text-lg font-bold">Valider le transfert</span>

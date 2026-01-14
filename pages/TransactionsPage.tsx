@@ -1,24 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-
-interface Transaction {
-  date: string;
-  name: string;
-  icon: string;
-  cat: string;
-  status: string;
-  amt: string;
-  plus?: boolean;
-}
+import { useApp, Transaction } from '../context/AppContext';
 
 const TransactionsPage: React.FC = () => {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-
-  const transactions: Transaction[] = [
-    { date: "Aujourd'hui, 14:30", name: "Apple Store", icon: "laptop_mac", cat: "Électronique", status: "Complété", amt: "- 1 299,00 €" },
-    { date: "Hier, 19:15", name: "Uber Eats", icon: "restaurant", cat: "Restauration", status: "En attente", amt: "- 45,50 €" },
-    { date: "22 Oct 2023", name: "Virement Salaire", icon: "payments", cat: "Revenu", status: "Complété", amt: "+ 3 500,00 €", plus: true }
-  ];
+  const { transactions } = useApp();
 
   return (
     <>
@@ -53,9 +39,9 @@ const TransactionsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {transactions.map((tx, idx) => (
+              {transactions.map((tx) => (
                 <tr
-                  key={idx}
+                  key={tx.id}
                   className="hover:bg-slate-50 cursor-pointer"
                   onClick={() => setSelectedTx(tx)}
                 >
@@ -82,13 +68,18 @@ const TransactionsPage: React.FC = () => {
                   </td>
                   <td
                     className={`px-6 py-4 text-right font-bold ${
-                      tx.plus ? 'text-emerald-600' : 'text-slate-900'
+                      tx.amt > 0 ? 'text-emerald-600' : 'text-slate-900'
                     }`}
                   >
-                    {tx.amt}
+                     {tx.amt > 0 ? '+' : ''} {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(tx.amt)}
                   </td>
                 </tr>
               ))}
+              {transactions.length === 0 && (
+                  <tr>
+                      <td colSpan={4} className="py-12 text-center text-slate-400">Aucune transaction trouvée</td>
+                  </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -108,7 +99,9 @@ const TransactionsPage: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-1">{selectedTx.name}</h2>
               <p className="text-slate-500 text-sm mb-4">{selectedTx.date}</p>
-              <div className="text-4xl font-black text-slate-900 mb-8">{selectedTx.amt}</div>
+              <div className="text-4xl font-black text-slate-900 mb-8">
+                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(selectedTx.amt)}
+              </div>
               <div className="w-full space-y-6 border-t pt-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Compte</span>
@@ -117,6 +110,10 @@ const TransactionsPage: React.FC = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Catégorie</span>
                   <span className="font-medium">{selectedTx.cat}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Statut</span>
+                  <span className="font-medium">{selectedTx.status}</span>
                 </div>
                 <Link
                   to="/receipt"

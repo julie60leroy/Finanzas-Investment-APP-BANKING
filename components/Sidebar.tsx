@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const { user, logout } = useApp();
 
   const navItems = [
     { path: "/", label: "Tableau de bord", icon: "dashboard" },
@@ -53,21 +55,21 @@ const Sidebar: React.FC = () => {
           <div
             className="size-10 rounded-full bg-cover bg-center border border-white/20"
             style={{
-              backgroundImage: 'url("https://picsum.photos/200")',
+              backgroundImage: `url("${user?.avatar || 'https://picsum.photos/200'}")`,
             }}
           ></div>
           <div className="flex flex-col overflow-hidden">
-            <p className="text-sm font-semibold text-white truncate">Marc Dubois</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.name || 'Utilisateur'}</p>
             <p className="text-xs text-slate-400">Premium Member</p>
           </div>
         </div>
-        <Link
-          to="/login"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-all mt-2"
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-all mt-2"
         >
           <span className="material-symbols-outlined">logout</span>
           <span className="text-sm font-medium">Déconnexion</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );
