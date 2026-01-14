@@ -1,6 +1,41 @@
 import React from 'react';
+import { useApp } from '../context/AppContext';
 
 const StatementPage: React.FC = () => {
+  const { user, transactions } = useApp();
+
+  // --- Gestion des Dates ---
+  const now = new Date();
+  const currentMonth = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const emissionDate = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const statementRef = `FIN-${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // --- Calculs Financiers Dynamiques ---
+  // On utilise toutes les transactions disponibles pour l'exemple
+  const statementTransactions = transactions;
+
+  // Total des entrées (+)
+  const totalCredits = statementTransactions
+    .filter(t => t.amt > 0)
+    .reduce((acc, t) => acc + t.amt, 0);
+
+  // Total des sorties (-)
+  const totalDebits = statementTransactions
+    .filter(t => t.amt < 0)
+    .reduce((acc, t) => acc + t.amt, 0);
+
+  // Solde Final (C'est le solde actuel du compte courant)
+  const finalBalance = user?.accounts.checking || 0;
+
+  // Calcul du Solde Initial (Reconstitution : Final - Mouvements)
+  // Formule : Initial + Credits + Debits (négatifs) = Final
+  // Donc : Initial = Final - Credits - Debits
+  const initialBalance = finalBalance - totalCredits - totalDebits;
+
+  // Formatage Monétaire
+  const formatMoney = (amount: number) => 
+    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+
   return (
     <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101822] font-display text-slate-800 dark:text-slate-200">
       {/* Header */}
@@ -37,8 +72,8 @@ const StatementPage: React.FC = () => {
           <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white uppercase mb-1">Relevé de Compte</h1>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">Période : Octobre 2023</p>
-              <p className="text-sm text-slate-400 mt-4 uppercase tracking-widest font-semibold">Référence : FIN-2023-10-4492</p>
+              <p className="text-slate-500 dark:text-slate-400 font-medium capitalize">Période : {currentMonth}</p>
+              <p className="text-sm text-slate-400 mt-4 uppercase tracking-widest font-semibold">Référence : {statementRef}</p>
             </div>
             <div className="text-right">
               <div className="flex items-center justify-end gap-2 mb-2">
@@ -59,7 +94,7 @@ const StatementPage: React.FC = () => {
             <div>
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Titulaire du compte</h3>
               <div className="space-y-1">
-                <p className="font-bold text-lg text-slate-900 dark:text-white">Jean-Baptiste Laurent</p>
+                <p className="font-bold text-lg text-slate-900 dark:text-white">{user?.name || 'Client Finanzas'}</p>
                 <p className="text-slate-600 dark:text-slate-400">14 Avenue des Champs-Élysées</p>
                 <p className="text-slate-600 dark:text-slate-400">75008 Paris, France</p>
               </div>
@@ -77,7 +112,7 @@ const StatementPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Date d'émission :</span>
-                  <span className="font-medium text-slate-900 dark:text-white">02 Nov 2023</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{emissionDate}</span>
                 </div>
               </div>
             </div>
@@ -87,20 +122,24 @@ const StatementPage: React.FC = () => {
           <div className="p-10">
             <div className="grid grid-cols-4 gap-6">
               <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                <p className="text-xs font-bold text-slate-400 uppercase mb-2">Solde Initial (01/10)</p>
-                <p className="text-xl font-bold tabular-nums text-[#1D2939] dark:text-white">42 150,00 €</p>
+                <p className="text-xs font-bold text-slate-400 uppercase mb-2">Solde Initial</p>
+                <p className="text-xl font-bold tabular-nums text-[#1D2939] dark:text-white">{formatMoney(initialBalance)}</p>
               </div>
               <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <p className="text-xs font-bold text-slate-500 uppercase mb-2">Total Crédits (+)</p>
-                <p className="text-xl font-bold text-[#1D2939] dark:text-slate-300 tabular-nums">+ 5 280,45 €</p>
+                <p className="text-xl font-bold text-[#1D2939] dark:text-slate-300 tabular-nums text-emerald-600">
+                  + {formatMoney(totalCredits)}
+                </p>
               </div>
               <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <p className="text-xs font-bold text-[#D92D20] uppercase mb-2">Total Débits (-)</p>
-                <p className="text-xl font-bold text-[#D92D20] tabular-nums">- 2 115,20 €</p>
+                <p className="text-xl font-bold text-[#D92D20] tabular-nums">
+                   {formatMoney(totalDebits)}
+                </p>
               </div>
               <div className="p-4 rounded-lg bg-[#D92D20] text-white shadow-lg shadow-[#D92D20]/20">
-                <p className="text-xs font-bold opacity-90 uppercase mb-2">Nouveau Solde (31/10)</p>
-                <p className="text-xl font-bold tabular-nums">45 315,25 €</p>
+                <p className="text-xs font-bold opacity-90 uppercase mb-2">Solde Actuel ({new Date().getDate().toString().padStart(2, '0')}/{ (new Date().getMonth() + 1).toString().padStart(2, '0') })</p>
+                <p className="text-xl font-bold tabular-nums">{formatMoney(finalBalance)}</p>
               </div>
             </div>
           </div>
@@ -112,65 +151,30 @@ const StatementPage: React.FC = () => {
                 <tr className="border-b-2 border-slate-100 dark:border-slate-800">
                   <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-32">Date</th>
                   <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Libellé de l'opération</th>
-                  <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-32">Valeur</th>
+                  <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-32">Type</th>
                   <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-40">Montant (EUR)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                <tr>
-                    <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">03/10/2023</td>
-                    <td className="py-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Virement Entrant - Salaire</p>
-                    <p className="text-xs text-slate-400">Ref: TECH CORP SA - OCT 23</p>
-                    </td>
-                    <td className="py-4 text-sm tabular-nums text-slate-500">03/10/2023</td>
-                    <td className="py-4 text-right font-medium tabular-nums text-[#1D2939] dark:text-slate-300">+ 3 850,00</td>
-                </tr>
-                <tr>
-                    <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">05/10/2023</td>
-                    <td className="py-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Achat CB Apple Store Paris</p>
-                    <p className="text-xs text-slate-400">Carte **** 8842 - Équipement</p>
-                    </td>
-                    <td className="py-4 text-sm tabular-nums text-slate-500">06/10/2023</td>
-                    <td className="py-4 text-right font-medium tabular-nums text-[#D92D20]">- 1 299,00</td>
-                </tr>
-                <tr>
-                    <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">12/10/2023</td>
-                    <td className="py-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Dividendes - Air Liquide</p>
-                    <p className="text-xs text-slate-400">Coupon Portefeuille #PRM-01</p>
-                    </td>
-                    <td className="py-4 text-sm tabular-nums text-slate-500">12/10/2023</td>
-                    <td className="py-4 text-right font-medium tabular-nums text-[#1D2939] dark:text-slate-300">+ 1 430,45</td>
-                </tr>
-                <tr>
-                    <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">15/10/2023</td>
-                    <td className="py-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Prélèvement Total Energies</p>
-                    <p className="text-xs text-slate-400">Mandat SEPA: FR99221144</p>
-                    </td>
-                    <td className="py-4 text-sm tabular-nums text-slate-500">15/10/2023</td>
-                    <td className="py-4 text-right font-medium tabular-nums text-[#D92D20]">- 215,50</td>
-                </tr>
-                <tr>
-                    <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">22/10/2023</td>
-                    <td className="py-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Frais de Gestion Trimestriels</p>
-                    <p className="text-xs text-slate-400">Services Premium Investment</p>
-                    </td>
-                    <td className="py-4 text-sm tabular-nums text-slate-500">22/10/2023</td>
-                    <td className="py-4 text-right font-medium tabular-nums text-[#D92D20]">- 450,70</td>
-                </tr>
-                <tr>
-                    <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">28/10/2023</td>
-                    <td className="py-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Abonnement Bloomberg Pro</p>
-                    <p className="text-xs text-slate-400">Paiement CB en devises (USD)</p>
-                    </td>
-                    <td className="py-4 text-sm tabular-nums text-slate-500">30/10/2023</td>
-                    <td className="py-4 text-right font-medium tabular-nums text-[#D92D20]">- 150,00</td>
-                </tr>
+                {statementTransactions.map((tx) => (
+                    <tr key={tx.id}>
+                        <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">{tx.date}</td>
+                        <td className="py-4">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{tx.name}</p>
+                        <p className="text-xs text-slate-400">{tx.cat} - ID: {tx.id}</p>
+                        </td>
+                        <td className="py-4 text-sm tabular-nums text-slate-500">{tx.amt > 0 ? 'Crédit' : 'Débit'}</td>
+                        <td className={`py-4 text-right font-medium tabular-nums ${tx.amt > 0 ? 'text-[#1D2939] dark:text-slate-300' : 'text-[#D92D20]'}`}>
+                            {tx.amt > 0 ? '+' : ''} {formatMoney(tx.amt)}
+                        </td>
+                    </tr>
+                ))}
+                
+                {statementTransactions.length === 0 && (
+                    <tr>
+                        <td colSpan={4} className="py-8 text-center text-slate-400 italic">Aucune transaction enregistrée pour cette période.</td>
+                    </tr>
+                )}
               </tbody>
             </table>
           </div>
