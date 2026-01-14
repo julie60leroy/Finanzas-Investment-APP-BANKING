@@ -46,9 +46,21 @@
       };
     </script>
     <style>
+      /* Critical CSS for Instant Paint */
       body {
         font-family: 'Inter', sans-serif;
+        background-color: #f8f6f6; /* Match background-light */
+        color: #1e293b; /* Match slate-main/text-slate-900 */
+        margin: 0;
+        opacity: 1;
+        transition: background-color 0.2s ease, color 0.2s ease;
       }
+      /* Dark mode override handled by JS class, but default ensures no white flash */
+      html.dark body {
+        background-color: #221010;
+        color: #ffffff;
+      }
+
       .material-symbols-outlined {
         font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
       }

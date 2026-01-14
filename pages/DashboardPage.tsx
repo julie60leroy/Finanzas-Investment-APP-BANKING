@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, transactions } = useApp();
+  const { user, transactions, notifications, formatTxDate } = useApp();
   const [copiedIban, setCopiedIban] = useState(false);
 
   // --- Calculs Financiers ---
@@ -13,6 +13,11 @@ const DashboardPage: React.FC = () => {
   const savingsBalance = user?.accounts.savings || 0;
   const cryptoBalance = 12500; // Simulé pour l'exemple "Investissement"
   const totalBalance = checkingBalance + savingsBalance + cryptoBalance;
+
+  // Récupération dynamique
+  const currentIban = user?.checkingIban || "FR76 3000 6000 0123 4567 8901 234";
+  const maskedIban = `FR76 •••• •••• ${currentIban.slice(-4)}`;
+  const accountName = user?.checkingAccountName || "Compte Courant";
 
   // Formatage des devises
   const formatCurrency = (amount: number) => 
@@ -29,9 +34,13 @@ const DashboardPage: React.FC = () => {
   // Dernières transactions (Top 5)
   const recentTransactions = transactions.slice(0, 5);
 
+  // Unread notifications count
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   // Fonction utilitaire pour copier l'IBAN
-  const copyIban = () => {
-    navigator.clipboard.writeText("FR76 3000 6000 0123 4567 8901 234");
+  const copyIban = (e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Empêche le clic de se propager à la carte
+    navigator.clipboard.writeText(currentIban);
     setCopiedIban(true);
     setTimeout(() => setCopiedIban(false), 2000);
   };
@@ -52,9 +61,16 @@ const DashboardPage: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-             <button className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary transition-colors relative">
+             <button 
+                onClick={() => navigate('/notifications')}
+                className="relative p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
+             >
                 <span className="material-symbols-outlined">notifications</span>
-                <span className="absolute top-2.5 right-2.5 size-2 bg-primary rounded-full border border-white dark:border-slate-800"></span>
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                )}
              </button>
              <button onClick={() => navigate('/settings')} className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
                 <span className="material-symbols-outlined">settings</span>
@@ -110,7 +126,7 @@ const DashboardPage: React.FC = () => {
           </button>
 
           <button 
-            onClick={copyIban}
+            onClick={(e) => copyIban(e)}
             className="flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-emerald-500/30 transition-all group"
           >
             <div className={`size-12 rounded-full flex items-center justify-center transition-colors ${copiedIban ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'}`}>
@@ -132,19 +148,25 @@ const DashboardPage: React.FC = () => {
 
         {/* --- ACCOUNTS GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Account */}
-          <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          {/* Main Account - CLICKABLE */}
+          <div 
+            onClick={() => navigate('/account-checking')}
+            className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
+          >
              <div className="flex justify-between items-start z-10">
                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                      <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">account_balance_wallet</span>
+                   <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-slate-600 dark:text-slate-300 group-hover:text-white">account_balance_wallet</span>
                    </div>
                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white">Compte Courant</h3>
-                      <p className="text-xs text-slate-500">FR76 •••• •••• 1234</p>
+                      <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        {accountName}
+                        <span className="material-symbols-outlined text-slate-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+                      </h3>
+                      <p className="text-xs text-slate-500">{maskedIban}</p>
                    </div>
                 </div>
-                <button className="text-slate-400 hover:text-primary"><span className="material-symbols-outlined">more_horiz</span></button>
+                <div className="text-slate-400 hover:text-primary"><span className="material-symbols-outlined">more_horiz</span></div>
              </div>
              
              <div className="mt-8 z-10">
@@ -157,7 +179,7 @@ const DashboardPage: React.FC = () => {
              </div>
              
              {/* Decorative Card Preview */}
-             <div className="absolute -bottom-10 -right-10 w-48 h-32 bg-gradient-to-br from-slate-800 to-black rounded-xl rotate-12 opacity-10 dark:opacity-40"></div>
+             <div className="absolute -bottom-10 -right-10 w-48 h-32 bg-gradient-to-br from-slate-800 to-black rounded-xl rotate-12 opacity-10 dark:opacity-40 group-hover:scale-105 transition-transform duration-500"></div>
           </div>
 
           {/* Savings Account */}
@@ -256,7 +278,7 @@ const DashboardPage: React.FC = () => {
                                   </div>
                                   <div>
                                      <p className="font-bold text-sm text-slate-900 dark:text-white">{tx.name}</p>
-                                     <p className="text-xs text-slate-500">{tx.date}</p>
+                                     <p className="text-xs text-slate-500">{formatTxDate(tx.date)}</p>
                                   </div>
                                </div>
                             </td>

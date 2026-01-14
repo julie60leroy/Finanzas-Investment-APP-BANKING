@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 const StatementPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, transactions } = useApp();
 
   // --- Gestion des Dates ---
@@ -11,7 +13,6 @@ const StatementPage: React.FC = () => {
   const statementRef = `FIN-${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
   // --- Calculs Financiers Dynamiques ---
-  // On utilise toutes les transactions disponibles pour l'exemple
   const statementTransactions = transactions;
 
   // Total des entrées (+)
@@ -24,28 +25,64 @@ const StatementPage: React.FC = () => {
     .filter(t => t.amt < 0)
     .reduce((acc, t) => acc + t.amt, 0);
 
-  // Solde Final (C'est le solde actuel du compte courant)
   const finalBalance = user?.accounts.checking || 0;
-
-  // Calcul du Solde Initial (Reconstitution : Final - Mouvements)
-  // Formule : Initial + Credits + Debits (négatifs) = Final
-  // Donc : Initial = Final - Credits - Debits
   const initialBalance = finalBalance - totalCredits - totalDebits;
+
+  // Données dynamiques
+  const accountName = user?.checkingAccountName || "Compte Courant";
 
   // Formatage Monétaire
   const formatMoney = (amount: number) => 
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
 
+  // Helper pour formater la date du relevé (date absolue requise pour un relevé officiel)
+  const formatStatementDate = (iso: string) => {
+      const d = new Date(iso);
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#101822] font-display text-slate-800 dark:text-slate-200">
+      
+      {/* Styles d'impression spécifiques */}
+      <style>{`
+        @media print {
+          @page { margin: 20px; }
+          body { background-color: white !important; -webkit-print-color-adjust: exact; }
+          .print-container { 
+            box-shadow: none !important; 
+            border: none !important; 
+            overflow: visible !important;
+          }
+          /* Empêche de couper les lignes de tableau en deux */
+          tr { page-break-inside: avoid; }
+          /* Répète l'en-tête du tableau sur chaque page */
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
+          /* Masque les éléments non imprimables */
+          .no-print { display: none !important; }
+        }
+      `}</style>
+
       {/* Header */}
       <header className="no-print bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#D92D20] text-3xl">account_balance</span>
-            <span className="font-bold text-xl tracking-tight uppercase text-[#1D2939] dark:text-white">
-              Finanzas <span className="text-[#D92D20]">Investment</span>
-            </span>
+          <div className="flex items-center gap-4">
+            <button 
+                onClick={() => navigate(-1)} 
+                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+                title="Retour"
+            >
+                <span className="material-symbols-outlined">arrow_back</span>
+                <span className="hidden sm:inline font-medium">Retour</span>
+            </button>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#D92D20] text-3xl">account_balance</span>
+                <span className="font-bold text-xl tracking-tight uppercase text-[#1D2939] dark:text-white hidden sm:inline">
+                Finanzas <span className="text-[#D92D20]">Investment</span>
+                </span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -53,14 +90,14 @@ const StatementPage: React.FC = () => {
               onClick={() => window.print()}
             >
               <span className="material-symbols-outlined text-sm">download</span>
-              Exporter en PDF
+              <span className="hidden sm:inline">Exporter en PDF</span>
             </button>
             <button
               className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-medium"
               onClick={() => window.print()}
             >
               <span className="material-symbols-outlined text-sm">print</span>
-              Imprimer
+              <span className="hidden sm:inline">Imprimer</span>
             </button>
           </div>
         </div>
@@ -104,11 +141,11 @@ const StatementPage: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Compte :</span>
-                  <span className="font-mono font-medium text-slate-900 dark:text-white">FR76 3000 6000 0123 4567 8901 234</span>
+                  <span className="font-mono font-medium text-slate-900 dark:text-white">{user?.checkingIban || 'FR76 3000 6000 0123 4567 8901 234'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Type :</span>
-                  <span className="font-medium text-slate-900 dark:text-white">Investissement Premium (EUR)</span>
+                  <span className="text-slate-500">Intitulé :</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{accountName}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Date d'émission :</span>
@@ -119,7 +156,7 @@ const StatementPage: React.FC = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="p-10">
+          <div className="p-10 break-inside-avoid">
             <div className="grid grid-cols-4 gap-6">
               <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <p className="text-xs font-bold text-slate-400 uppercase mb-2">Solde Initial</p>
@@ -158,13 +195,13 @@ const StatementPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {statementTransactions.map((tx) => (
                     <tr key={tx.id}>
-                        <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">{tx.date}</td>
-                        <td className="py-4">
+                        <td className="py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400 align-top">{formatStatementDate(tx.date)}</td>
+                        <td className="py-4 align-top">
                         <p className="text-sm font-semibold text-slate-900 dark:text-white">{tx.name}</p>
                         <p className="text-xs text-slate-400">{tx.cat} - ID: {tx.id}</p>
                         </td>
-                        <td className="py-4 text-sm tabular-nums text-slate-500">{tx.amt > 0 ? 'Crédit' : 'Débit'}</td>
-                        <td className={`py-4 text-right font-medium tabular-nums ${tx.amt > 0 ? 'text-[#1D2939] dark:text-slate-300' : 'text-[#D92D20]'}`}>
+                        <td className="py-4 text-sm tabular-nums text-slate-500 align-top">{tx.amt > 0 ? 'Crédit' : 'Débit'}</td>
+                        <td className={`py-4 text-right font-medium tabular-nums align-top ${tx.amt > 0 ? 'text-[#1D2939] dark:text-slate-300' : 'text-[#D92D20]'}`}>
                             {tx.amt > 0 ? '+' : ''} {formatMoney(tx.amt)}
                         </td>
                     </tr>
@@ -180,7 +217,7 @@ const StatementPage: React.FC = () => {
           </div>
 
           {/* Footer Info */}
-          <div className="p-10 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
+          <div className="p-10 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 page-footer">
             <div className="grid grid-cols-2 gap-8 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
               <div>
                 <p className="font-bold uppercase mb-1">Information Légale</p>

@@ -1,26 +1,77 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 const VirementAmountPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useApp();
+  
+  // Récupération du bénéficiaire passé depuis la page précédente
+  const beneficiary = location.state?.beneficiary;
+
+  // Si pas de bénéficiaire (accès direct à l'url), redirection
+  useEffect(() => {
+    if (!beneficiary) {
+      navigate('/virement-beneficiary');
+    }
+  }, [beneficiary, navigate]);
+
   const [amount, setAmount] = useState(1000);
+  const [transferType, setTransferType] = useState<'standard' | 'instant'>('instant');
+  const [motif, setMotif] = useState("Achat de biens ou services"); // Motif par défaut
+  const [error, setError] = useState<string | null>(null);
   
   // Rate calc
   const rate = 1.0842;
-  const fees = 4.52;
+  // Frais dynamiques selon le type
+  const fees = transferType === 'instant' ? 4.52 : 0.50; 
   const convertedAmount = (amount - fees) * rate;
 
+  const validate = (val: number) => {
+    if (!user) return "Erreur de chargement utilisateur";
+    if (val <= 0) return "Le montant doit être supérieur à 0";
+    if (val <= fees) return `Le montant doit couvrir les frais de ${fees.toFixed(2)} €`;
+    if (val > user.accounts.checking) return "Solde insuffisant pour ce virement";
+    return null;
+  };
+
+  // Check validation on change or type switch
+  useEffect(() => {
+    setError(validate(amount));
+  }, [amount, transferType, user]);
+
   const handleNext = () => {
-    // Validate balance
-    if (user && user.accounts.checking < amount) {
-        alert("Solde insuffisant !");
+    const validationError = validate(amount);
+    if (validationError) {
+        setError(validationError);
         return;
     }
-    // Navigate with state
-    navigate('/virement-confirm', { state: { amount: amount, converted: convertedAmount.toFixed(2) } });
+    
+    navigate('/virement-confirm', { 
+      state: { 
+        amount: amount, 
+        converted: convertedAmount.toFixed(2),
+        transferType: transferType,
+        fees: fees,
+        beneficiary: beneficiary,
+        motif: motif // Transmission du motif
+      } 
+    });
   };
+
+  const motifs = [
+    "Achat de biens ou services",
+    "Remboursement de prêt / Crédit",
+    "Octroi de crédit",
+    "Loyer / Charges",
+    "Pension / Aide familiale",
+    "Cadeau / Donation",
+    "Épargne / Placement",
+    "Règlement de facture"
+  ];
+
+  if (!beneficiary) return null; // Prevent render before redirect
 
   return (
     <div className="flex-1 px-4 py-8 lg:px-8 xl:px-40 overflow-y-auto bg-background-light dark:bg-background-dark">
@@ -28,6 +79,13 @@ const VirementAmountPage: React.FC = () => {
         
         {/* Header */}
         <div className="mb-10 flex flex-col gap-2">
+          <button 
+              onClick={() => navigate('/virement-beneficiary')} 
+              className="self-start flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-4"
+          >
+              <span className="material-symbols-outlined text-lg">arrow_back</span>
+              Retour au bénéficiaire
+          </button>
           <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Virement International</h1>
           <p className="text-slate-500 text-lg">Envoyez des fonds en toute sécurité vers l'étranger.</p>
         </div>
@@ -70,12 +128,14 @@ const VirementAmountPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
           {/* Left Column: Conversion Form */}
           <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-slate-100 dark:border-slate-800">
+            <div className={`rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border ${error ? 'border-red-300 dark:border-red-900/50' : 'border-slate-100 dark:border-slate-800'} transition-colors`}>
               
               {/* Source Amount */}
               <div className="relative">
-                <label className="mb-2 block text-sm font-medium text-slate-500">Vous envoyez (Solde: {user?.accounts.checking} €)</label>
-                <div className="flex items-center rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all p-1">
+                <label className="mb-2 block text-sm font-medium text-slate-500">
+                    Vous envoyez (Solde: <span className={user && amount > user.accounts.checking ? "text-[#D92D20] font-bold" : ""}>{user?.accounts.checking} €</span>)
+                </label>
+                <div className={`flex items-center rounded-xl bg-slate-50 dark:bg-slate-800 border ${error ? 'border-red-300 focus-within:border-[#D92D20] focus-within:ring-[#D92D20]' : 'border-slate-200 dark:border-slate-700 focus-within:border-primary focus-within:ring-primary'} transition-all p-1 focus-within:ring-1`}>
                   <input 
                     className="w-full bg-transparent border-none px-4 py-4 text-2xl font-bold text-slate-900 dark:text-white placeholder-slate-300 focus:ring-0" 
                     placeholder="0.00" 
@@ -89,6 +149,31 @@ const VirementAmountPage: React.FC = () => {
                     <span className="material-symbols-outlined text-slate-400">expand_more</span>
                   </div>
                 </div>
+                {error && (
+                    <div className="flex items-center gap-2 mt-2 text-[#D92D20] text-sm font-medium animate-pulse">
+                        <span className="material-symbols-outlined text-[18px]">error</span>
+                        {error}
+                    </div>
+                )}
+              </div>
+
+              {/* Motif Selection */}
+              <div className="relative mt-4">
+                  <label className="mb-2 block text-sm font-medium text-slate-500">Motif du virement</label>
+                  <div className="relative">
+                      <select 
+                        value={motif}
+                        onChange={(e) => setMotif(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 pr-10 focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white appearance-none cursor-pointer"
+                      >
+                          {motifs.map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                          ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-500">
+                          <span className="material-symbols-outlined">expand_more</span>
+                      </div>
+                  </div>
               </div>
 
               {/* Conversion Details (Vertical Line) */}
@@ -102,8 +187,8 @@ const VirementAmountPage: React.FC = () => {
                       <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
                         <span className="material-symbols-outlined text-[14px]">remove</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{fees} EUR</span>
-                      <span className="text-sm text-slate-400">Frais de virement</span>
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{fees.toFixed(2)} EUR</span>
+                      <span className="text-sm text-slate-400">Frais ({transferType === 'instant' ? 'Instantané' : 'Standard'})</span>
                     </div>
                   </div>
                   {/* Converted Amount */}
@@ -113,7 +198,7 @@ const VirementAmountPage: React.FC = () => {
                       <div className="flex size-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
                         <span className="material-symbols-outlined text-[14px]">drag_handle</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{(amount - fees).toFixed(2)} EUR</span>
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{(amount - fees) > 0 ? (amount - fees).toFixed(2) : '0.00'} EUR</span>
                       <span className="text-sm text-slate-400">Montant converti</span>
                     </div>
                   </div>
@@ -150,15 +235,54 @@ const VirementAmountPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Arrival Time */}
-              <div className="mt-8 flex flex-col gap-4">
+            {/* Transfer Type Selection */}
+            <div>
+               <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 px-1">Type de virement</h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setTransferType('instant')}
+                    className={`relative p-5 rounded-2xl border-2 text-left transition-all group ${transferType === 'instant' ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                  >
+                     <div className="flex justify-between items-start mb-2">
+                        <div className={`size-10 rounded-full flex items-center justify-center ${transferType === 'instant' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                           <span className="material-symbols-outlined">bolt</span>
+                        </div>
+                        {transferType === 'instant' && <span className="material-symbols-outlined text-primary">check_circle</span>}
+                     </div>
+                     <p className={`font-bold ${transferType === 'instant' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>Instantané</p>
+                     <p className="text-xs text-slate-500 mt-1 mb-3">Arrivée en quelques secondes. Idéal pour les urgences.</p>
+                     <p className="text-xs font-bold text-slate-900 dark:text-white">Frais : 4.52 €</p>
+                  </button>
+
+                  <button 
+                    onClick={() => setTransferType('standard')}
+                    className={`relative p-5 rounded-2xl border-2 text-left transition-all group ${transferType === 'standard' ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                  >
+                     <div className="flex justify-between items-start mb-2">
+                        <div className={`size-10 rounded-full flex items-center justify-center ${transferType === 'standard' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                           <span className="material-symbols-outlined">schedule</span>
+                        </div>
+                        {transferType === 'standard' && <span className="material-symbols-outlined text-primary">check_circle</span>}
+                     </div>
+                     <p className={`font-bold ${transferType === 'standard' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>Standard</p>
+                     <p className="text-xs text-slate-500 mt-1 mb-3">Arrivée sous 24-48h. Économique pour les gros montants.</p>
+                     <p className="text-xs font-bold text-slate-900 dark:text-white">Frais : 0.50 €</p>
+                  </button>
+               </div>
+            </div>
+
+            {/* Arrival & Submit */}
+            <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800 p-3 border border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-slate-400">calendar_today</span>
                     <div className="flex flex-col">
                       <span className="text-xs text-slate-500">Arrivée estimée</span>
-                      <span className="text-sm font-semibold text-slate-900 dark:text-white">Demain, le 14 Octobre</span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                         {transferType === 'instant' ? "Aujourd'hui, immédiat" : "Demain, le 14 Octobre"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -166,14 +290,15 @@ const VirementAmountPage: React.FC = () => {
                 {/* Main CTA */}
                 <button 
                   onClick={handleNext}
-                  className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-primary px-8 py-4 text-white shadow-lg transition-all hover:bg-primary-hover active:scale-[0.98]"
+                  disabled={!!error}
+                  className={`group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl px-8 py-4 text-white shadow-lg transition-all active:scale-[0.98] ${error ? 'bg-slate-400 cursor-not-allowed opacity-70' : 'bg-primary hover:bg-primary-hover'}`}
                 >
                   <span className="text-lg font-bold">Valider le transfert</span>
-                  <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+                  {!error && <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>}
+                  {error && <span className="material-symbols-outlined">block</span>}
                 </button>
                 <p className="text-center text-xs text-slate-400">En cliquant sur valider, vous acceptez les <a className="text-slate-600 dark:text-slate-300 underline hover:text-slate-900" href="#">conditions générales</a> de Finanzas.</p>
               </div>
-            </div>
           </div>
 
           {/* Right Column: Beneficiary & Security */}
@@ -191,13 +316,20 @@ const VirementAmountPage: React.FC = () => {
                 </button>
               </div>
               <div className="flex items-start gap-4">
-                <div className="size-14 flex-shrink-0 overflow-hidden rounded-full border-2 border-slate-100 dark:border-slate-700 bg-slate-100 bg-center bg-cover" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg")'}}></div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">Jean Dupont</p>
-                  <p className="text-sm text-slate-500">Compte Personnel • USA</p>
+                {beneficiary.img ? (
+                    <div className="size-14 flex-shrink-0 overflow-hidden rounded-full border-2 border-slate-100 dark:border-slate-700 bg-slate-100 bg-center bg-cover" style={{backgroundImage: `url("${beneficiary.img}")`}}></div>
+                ) : (
+                    <div className="size-14 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                        <span className="material-symbols-outlined text-3xl">person</span>
+                    </div>
+                )}
+                
+                <div className="flex flex-col gap-1 overflow-hidden">
+                  <p className="text-lg font-bold text-slate-900 dark:text-white truncate">{beneficiary.name}</p>
+                  <p className="text-sm text-slate-500 truncate">{beneficiary.bankName || 'Banque Externe'}</p>
                   <div className="mt-1 flex items-center gap-1.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-2 py-1 self-start">
                     <span className="material-symbols-outlined text-[14px] text-slate-400">lock</span>
-                    <p className="font-mono text-xs text-slate-600 dark:text-slate-300 font-medium">US89 •••• •••• 9821</p>
+                    <p className="font-mono text-xs text-slate-600 dark:text-slate-300 font-medium truncate max-w-[150px]">{beneficiary.iban}</p>
                   </div>
                 </div>
               </div>
@@ -212,7 +344,7 @@ const VirementAmountPage: React.FC = () => {
                 <div className="flex flex-col gap-2">
                   <h3 className="text-base font-bold text-yellow-800 dark:text-yellow-400">Vérification de sécurité</h3>
                   <p className="text-sm leading-relaxed text-yellow-700 dark:text-yellow-200/80">
-                    Ce bénéficiaire a été ajouté il y a moins de 24h. Une authentification forte (SCA) sera requise à l'étape suivante pour valider la transaction.
+                    Ce bénéficiaire a été ajouté récemment. Une authentification forte (SCA) sera requise à l'étape suivante pour valider la transaction.
                   </p>
                   <label className="mt-2 flex items-start gap-3 cursor-pointer group">
                     <input 

@@ -1,42 +1,71 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 
 const VirementBeneficiaryPage: React.FC = () => {
   const navigate = useNavigate();
+  const { beneficiaries, addBeneficiary } = useApp();
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const beneficiaries = [
-    { 
-      name: "Jean Dupont", 
-      iban: "FR76 •••• •••• 1234", 
-      img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg",
+  // Form State
+  const [newBen, setNewBen] = useState({
+    name: '',
+    iban: '',
+    bankName: '',
+  });
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBen.name || !newBen.iban) return;
+    
+    // Création de l'objet bénéficiaire
+    const beneficiaryData = {
+      name: newBen.name,
+      iban: newBen.iban,
+      bankName: newBen.bankName || 'Banque Externe',
       favorite: false
-    },
-    { 
-      name: "Marie Lefebvre", 
-      iban: "BE93 •••• •••• 8821", 
-      icon: "person",
-      favorite: true
-    },
-    { 
-      name: "Thomas Muller", 
-      iban: "DE42 •••• •••• 5678", 
-      img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg",
-      favorite: false
-    },
-    { 
-      name: "Sarah Williams", 
-      iban: "GB12 •••• •••• 9900", 
-      img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGg7_Lh0wYSya4uECacFBdzku7QnQLMBXnA4ikqVPrGk-vgW39rzABKZU3bkoFEaWVQ95T8aKYoebyA6RAqs5e6Eludgofy0ZtAIRTVXVUo3FOSCgTjrXBAoImKhekiDzr3BW3uQJY1iEq2DDTnmHGQMmYZe14JwLQqCHclXlcmgiT7Kyrfau6p99eLK-roxK8TVFH3IDKu4w801ty99qsrGe9e5PHmR8xYcQ39o2-QmKXod-i5NsxSFSofs_XQ73GLdxU8emEdeQ",
-      favorite: false
-    }
-  ];
+    };
+
+    addBeneficiary(beneficiaryData);
+    
+    setIsModalOpen(false);
+    setNewBen({ name: '', iban: '', bankName: '' });
+
+    // Navigation immédiate avec le nouveau bénéficiaire
+    // Note: on simule l'ID car addBeneficiary est synchrone dans notre contexte, 
+    // mais dans une vraie app on attendrait la réponse de l'API.
+    navigate('/virement-amount', { 
+      state: { 
+        beneficiary: { ...beneficiaryData, id: Date.now().toString() } 
+      } 
+    });
+  };
+
+  const handleSelectBeneficiary = (b: any) => {
+    navigate('/virement-amount', { state: { beneficiary: b } });
+  };
+
+  const filteredBeneficiaries = beneficiaries.filter(b => 
+    b.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    b.iban.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark">
+    <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark relative">
       <div className="flex-1 px-4 py-8 lg:px-8 xl:px-40 overflow-y-auto">
         <div className="mx-auto max-w-4xl">
           {/* Header */}
           <div className="mb-10 flex flex-col gap-2">
+            <button 
+                onClick={() => navigate('/')} 
+                className="self-start flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-4"
+            >
+                <span className="material-symbols-outlined text-lg">arrow_back</span>
+                Tableau de bord
+            </button>
             <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">
               Virement International
             </h1>
@@ -87,10 +116,15 @@ const VirementBeneficiaryPage: React.FC = () => {
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-12 pr-4 py-4 focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white dark:focus:bg-black transition-all text-slate-900 dark:text-white placeholder-slate-400" 
                     placeholder="Nom, IBAN ou email..." 
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
-              <button className="w-full md:w-auto whitespace-nowrap flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-white font-bold shadow-lg hover:bg-primary-hover transition-all active:scale-[0.98]">
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="w-full md:w-auto whitespace-nowrap flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-white font-bold shadow-lg hover:bg-primary-hover transition-all active:scale-[0.98]"
+              >
                 <span className="material-symbols-outlined">person_add</span>
                 Ajouter un nouveau bénéficiaire
               </button>
@@ -103,10 +137,10 @@ const VirementBeneficiaryPage: React.FC = () => {
                 <button className="text-sm font-semibold text-primary hover:underline">Voir tout</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {beneficiaries.map((b, i) => (
+                {filteredBeneficiaries.map((b) => (
                   <div 
-                    key={i} 
-                    onClick={() => navigate('/virement-amount')}
+                    key={b.id} 
+                    onClick={() => handleSelectBeneficiary(b)}
                     className="flex items-center gap-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer group"
                   >
                     {b.img ? (
@@ -120,20 +154,26 @@ const VirementBeneficiaryPage: React.FC = () => {
                       </div>
                     )}
                    
-                    <div className="flex flex-1 flex-col">
+                    <div className="flex flex-1 flex-col overflow-hidden">
                       <div className="flex items-center justify-between">
-                        <p className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{b.name}</p>
+                        <p className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">{b.name}</p>
                         {b.favorite ? (
                            <span className="material-symbols-outlined text-yellow-400 text-lg icon-filled">star</span>
                         ) : (
                            <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg">star</span>
                         )}
                       </div>
-                      <p className="text-xs font-mono text-slate-500 uppercase tracking-tight">{b.iban}</p>
+                      <p className="text-xs font-mono text-slate-500 uppercase tracking-tight truncate">{b.iban}</p>
+                      {b.bankName && <p className="text-[10px] text-slate-400 mt-1">{b.bankName}</p>}
                     </div>
                     <span className="material-symbols-outlined text-slate-400">chevron_right</span>
                   </div>
                 ))}
+                {filteredBeneficiaries.length === 0 && (
+                    <div className="col-span-1 md:col-span-2 py-8 text-center text-slate-500">
+                        Aucun bénéficiaire trouvé. Ajoutez-en un nouveau !
+                    </div>
+                )}
               </div>
             </div>
 
@@ -162,6 +202,87 @@ const VirementBeneficiaryPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* --- ADD BENEFICIARY MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setIsModalOpen(false)}></div>
+          
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto animate-[fadeIn_0.2s_ease-out]">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-900 z-10">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Nouveau Bénéficiaire</h2>
+              <button onClick={() => setIsModalOpen(false)} className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddSubmit} className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom du titulaire / Raison sociale</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">person</span>
+                    <input 
+                      type="text" 
+                      required
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-12 pr-4 py-3.5 focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white placeholder-slate-400"
+                      placeholder="Ex: Jean Dupont"
+                      value={newBen.name}
+                      onChange={(e) => setNewBen({...newBen, name: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">IBAN / Numéro de compte</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">account_balance_wallet</span>
+                    <input 
+                      type="text" 
+                      required
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-12 pr-4 py-3.5 focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white placeholder-slate-400 uppercase"
+                      placeholder="FR76 ..."
+                      value={newBen.iban}
+                      onChange={(e) => setNewBen({...newBen, iban: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom de la Banque (Optionnel)</label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">account_balance</span>
+                      <input 
+                        type="text" 
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-12 pr-4 py-3.5 focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white placeholder-slate-400"
+                        placeholder="Ex: Crédit Agricole"
+                        value={newBen.bankName}
+                        onChange={(e) => setNewBen({...newBen, bankName: e.target.value})}
+                      />
+                    </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4 flex gap-3">
+                 <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 shrink-0">info</span>
+                 <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
+                   En ajoutant ce bénéficiaire, vous certifiez que les informations fournies sont exactes. Pour votre sécurité, une vérification peut être effectuée avant le premier virement.
+                 </p>
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700 transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined">check_circle</span>
+                  Enregistrer et Continuer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

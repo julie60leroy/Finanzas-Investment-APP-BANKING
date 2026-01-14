@@ -1,8 +1,22 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const VirementSuccessPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state || {};
+  const amount = state.amount || 0;
+  const beneficiary = state.beneficiary || { name: 'Bénéficiaire', iban: '---' }; 
+  const motif = state.motif || "Virement";
+  // On récupère aussi les autres données pour le reçu si disponibles
+  const fullReceiptState = {
+    amount,
+    beneficiary,
+    motif,
+    date: state.date,
+    fees: state.fees,
+    transferType: state.transferType
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-background-light dark:bg-background-dark">
@@ -21,7 +35,7 @@ const VirementSuccessPage: React.FC = () => {
           <div className="mb-10 space-y-4">
             <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Transfert Envoyé</h1>
             <p className="text-xl text-slate-500 dark:text-slate-400">
-              Votre virement de <span className="font-bold text-slate-900 dark:text-white">1000 EUR</span> a été envoyé avec succès.
+              Votre virement de <span className="font-bold text-slate-900 dark:text-white">{amount} EUR</span> a été envoyé avec succès.
             </p>
           </div>
 
@@ -34,18 +48,30 @@ const VirementSuccessPage: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
                   <span className="text-slate-500 dark:text-slate-400">Bénéficiaire</span>
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="size-8 overflow-hidden rounded-full bg-center bg-cover" 
-                      style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg")'}}
-                    ></div>
-                    <span className="font-semibold text-slate-900 dark:text-white">Jean Dupont</span>
+                    {beneficiary.img ? (
+                       <div 
+                        className="size-8 overflow-hidden rounded-full bg-center bg-cover" 
+                        style={{backgroundImage: `url("${beneficiary.img}")`}}
+                      ></div>
+                    ) : (
+                      <div className="size-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                          <span className="material-symbols-outlined text-lg">person</span>
+                      </div>
+                    )}
+                    <span className="font-semibold text-slate-900 dark:text-white">{beneficiary.name}</span>
                   </div>
                 </div>
 
                 {/* Amount Debited */}
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
                   <span className="text-slate-500 dark:text-slate-400">Montant débité</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">1 004,52 EUR</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{amount} EUR</span>
+                </div>
+
+                {/* Motif */}
+                <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
+                  <span className="text-slate-500 dark:text-slate-400">Motif</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{motif}</span>
                 </div>
 
                 {/* Exchange Rate */}
@@ -63,7 +89,7 @@ const VirementSuccessPage: React.FC = () => {
                 {/* Reference */}
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Référence</span>
-                  <span className="font-mono text-sm font-medium text-slate-400">#TRX-9821-4402-23</span>
+                  <span className="font-mono text-sm font-medium text-slate-400">#TRX-{Math.floor(Math.random() * 10000)}</span>
                 </div>
               </div>
             </div>
@@ -80,7 +106,7 @@ const VirementSuccessPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
             <button 
-              onClick={() => navigate('/receipt')} 
+              onClick={() => navigate('/receipt', { state: fullReceiptState })}
               className="flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-white shadow-lg transition-all hover:bg-primary-hover active:scale-[0.98]"
             >
               <span className="material-symbols-outlined">download</span>

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const AdminPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div className="flex h-screen w-full overflow-hidden bg-white text-slate-800 font-display antialiased selection:bg-primary selection:text-white">
       {/* Sidebar */}
@@ -71,7 +72,10 @@ const AdminPage: React.FC = () => {
             <span className="font-medium text-slate-800">Injection</span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors"
+            >
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary"></span>
             </button>

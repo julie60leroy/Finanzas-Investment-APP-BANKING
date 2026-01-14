@@ -1,21 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 const VirementConfirmPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { performTransfer } = useApp();
+  const { performTransfer, user } = useApp();
   
-  // Get data passed from previous screen, default if direct access
-  const state = location.state as { amount: number, converted: string } || { amount: 1000, converted: "1079.30" };
-  const amount = state.amount;
-  const convertedAmount = state.converted;
+  // Get data passed from previous screen
+  const state = location.state || {};
+  const amount = state.amount || 0;
+  const convertedAmount = state.converted || "0.00";
+  const transferType = state.transferType || 'instant';
+  const fees = state.fees || (transferType === 'instant' ? 4.52 : 0.50);
+  const beneficiary = state.beneficiary;
+  const motif = state.motif || "Virement";
+
+  // Local State for PIN Validation
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
+
+  // Redirection si pas de bénéficiaire
+  if (!beneficiary) {
+    navigate('/virement-beneficiary');
+    return null;
+  }
 
   const handleConfirm = () => {
-    // Actually deduct money and add transaction
-    performTransfer(amount, "Jean Dupont");
-    navigate('/virement-success', { state: { amount } });
+    // Validation du code PIN à 4 chiffres
+    if (user && pin === user.securityPin) {
+        performTransfer(amount, beneficiary.name, motif, beneficiary);
+        // On passe TOUTES les infos nécessaires pour le reçu
+        navigate('/virement-success', { 
+            state: { 
+                amount, 
+                beneficiary, // L'objet complet (IBAN, Banque, etc)
+                motif, 
+                date: new Date().toISOString(),
+                fees,
+                transferType
+            } 
+        });
+    } else {
+        setError(true);
+        setPin(''); // Reset pin on error
+    }
   };
 
   return (
@@ -25,6 +54,13 @@ const VirementConfirmPage: React.FC = () => {
         <div className="opacity-40 select-none pointer-events-none" aria-hidden="true">
           {/* Header */}
           <div className="mb-10 flex flex-col gap-2">
+            <button 
+                onClick={() => navigate('/virement-amount', { state: { beneficiary } })} 
+                className="self-start flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-4 pointer-events-auto cursor-pointer"
+            >
+                <span className="material-symbols-outlined text-lg">arrow_back</span>
+                Retour au montant
+            </button>
             <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Virement : Sécurité et Confirmation</h1>
             <p className="text-slate-500 text-lg">Vérifiez les détails avant de confirmer l'opération.</p>
           </div>
@@ -71,6 +107,17 @@ const VirementConfirmPage: React.FC = () => {
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Récapitulatif du virement</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500">Motif du virement</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{motif}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500">Type de virement</span>
+                    <span className="font-bold text-slate-900 dark:text-white capitalize flex items-center gap-2">
+                        {transferType === 'instant' ? <span className="material-symbols-outlined text-primary text-lg">bolt</span> : <span className="material-symbols-outlined text-slate-500 text-lg">schedule</span>}
+                        {transferType === 'instant' ? 'Instantané' : 'Standard'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                     <span className="text-slate-500">Montant envoyé</span>
                     <span className="text-xl font-bold text-slate-900 dark:text-white">{amount} EUR</span>
                   </div>
@@ -80,7 +127,7 @@ const VirementConfirmPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                     <span className="text-slate-500">Frais de service</span>
-                    <span className="font-medium text-slate-900 dark:text-white">4,52 EUR</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{fees.toFixed(2)} EUR</span>
                   </div>
                   <div className="flex justify-between items-center py-3">
                     <span className="text-slate-500 font-semibold">Le bénéficiaire reçoit</span>
@@ -94,10 +141,16 @@ const VirementConfirmPage: React.FC = () => {
             <div className="lg:col-span-5 flex flex-col gap-6">
               <div className="rounded-2xl bg-white dark:bg-slate-900 p-6 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-4">
-                  <div className="size-12 overflow-hidden rounded-full border border-slate-100 dark:border-slate-700 bg-center bg-cover" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg")'}}></div>
+                  {beneficiary.img ? (
+                    <div className="size-12 overflow-hidden rounded-full border border-slate-100 dark:border-slate-700 bg-center bg-cover" style={{backgroundImage: `url("${beneficiary.img}")`}}></div>
+                  ) : (
+                    <div className="size-12 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                        <span className="material-symbols-outlined text-2xl">person</span>
+                    </div>
+                  )}
                   <div>
-                    <p className="font-bold text-slate-900 dark:text-white">Jean Dupont</p>
-                    <p className="text-sm text-slate-500">Compte Personnel • USA</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{beneficiary.name}</p>
+                    <p className="text-sm text-slate-500">{beneficiary.bankName}</p>
                   </div>
                 </div>
               </div>
@@ -106,7 +159,9 @@ const VirementConfirmPage: React.FC = () => {
                   <span className="material-symbols-outlined text-slate-400">calendar_today</span>
                   <div>
                     <p className="text-xs text-slate-500">Arrivée estimée</p>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Demain, le 14 Octobre</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {transferType === 'instant' ? "Aujourd'hui, immédiat" : "Demain, le 14 Octobre"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -121,72 +176,55 @@ const VirementConfirmPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Modal Overlay */}
-        <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+        {/* Modal Overlay - PIN VALIDATION (4 Chiffres) */}
+        <div className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-[fadeIn_0.2s_ease-out]">
             <div className="p-8 text-center">
               <div className="mx-auto size-16 bg-red-50 dark:bg-red-900/20 text-primary rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-3xl">verified_user</span>
+                <span className="material-symbols-outlined text-3xl">dialpad</span>
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Authentification Forte</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Code Secret</h2>
               <p className="text-slate-500 dark:text-slate-400 mb-8">
-                Pour valider votre virement de <span className="font-bold text-slate-900 dark:text-white">{amount} EUR</span>, une confirmation est requise.
+                Entrez votre code à <span className="font-bold text-slate-900 dark:text-white">4 chiffres</span> pour valider le virement de {amount} EUR.
               </p>
               
-              <div className="space-y-4">
-                {/* Option 1: App Mobile */}
-                <button className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-primary bg-red-50/30 dark:bg-red-900/10 text-left transition-all hover:bg-red-50 dark:hover:bg-red-900/20 group">
-                  <div className="size-10 flex items-center justify-center rounded-xl bg-primary text-white">
-                    <span className="material-symbols-outlined">smartphone</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-slate-900 dark:text-white">Application mobile</p>
-                    <p className="text-xs text-slate-500">Valider via une notification push</p>
-                  </div>
-                  <span className="material-symbols-outlined text-primary">chevron_right</span>
-                </button>
-
-                {/* Option 2: SMS Code (Expanded) */}
-                <div className="w-full p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-left">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      <span className="material-symbols-outlined">sms</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-slate-900 dark:text-white">Saisir le code SMS</p>
-                      <p className="text-xs text-slate-500">Envoyé au +33 6 •• •• •• 21</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-between mb-4">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <input 
-                        key={i}
-                        className="size-10 sm:size-12 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-center text-xl font-bold focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white"
-                        maxLength={1}
-                        placeholder="-"
-                        type="text"
-                      />
-                    ))}
-                  </div>
-                  <button 
-                    onClick={handleConfirm}
-                    className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition-colors shadow-md active:scale-[0.98]"
-                  >
-                    Confirmer le virement
-                  </button>
+              <div className="space-y-6">
+                <div className="relative">
+                    <input 
+                      type="password"
+                      maxLength={4}
+                      placeholder="----"
+                      value={pin}
+                      onChange={(e) => {
+                          setError(false);
+                          setPin(e.target.value.replace(/\D/g, ''));
+                      }}
+                      className={`w-full text-center text-4xl tracking-[0.5em] font-black rounded-xl border ${error ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200 dark:border-slate-700'} bg-slate-50 dark:bg-slate-800 p-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all`}
+                    />
+                    {error && (
+                        <p className="absolute -bottom-6 left-0 right-0 text-center text-xs font-bold text-red-500 animate-pulse">Code incorrect. Réessayez.</p>
+                    )}
                 </div>
+
+                <button 
+                  onClick={handleConfirm}
+                  disabled={pin.length !== 4}
+                  className="w-full py-4 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition-colors shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirmer le virement
+                </button>
               </div>
               
               <button 
-                onClick={() => navigate('/virement-amount')}
+                onClick={() => navigate('/virement-amount', { state: { beneficiary } })}
                 className="mt-8 text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline"
               >
-                Annuler la transaction
+                Annuler
               </button>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-sm text-slate-400">lock</span>
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Paiement 100% Sécurisé</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Validation Sécurisée</span>
             </div>
           </div>
         </div>

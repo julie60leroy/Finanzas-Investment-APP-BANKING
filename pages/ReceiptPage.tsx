@@ -1,33 +1,78 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const ReceiptPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useApp();
+  const state = location.state || {};
+  
+  // Data Recovery - STRICTLY uses state passed from VirementSuccessPage
+  // If no state, we display placeholders, but for the flow requested, data will be present.
+  const amount = state.amount || 0;
+  
+  // Construction de l'objet bénéficiaire à partir de l'état
+  const beneficiary = state.beneficiary || {
+    name: "Bénéficiaire Inconnu",
+    iban: "----",
+    bankName: "Banque Inconnue",
+    img: ""
+  };
+
+  const motif = state.motif || "Virement";
+  
+  // Gestion de la date
+  const dateObj = state.date ? new Date(state.date) : new Date();
+  const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const referenceId = `FI-${Math.floor(dateObj.getTime() / 1000)}-TRX`;
+  
+  // Calculations & Formatting
+  const rate = 1.0842;
+  const convertedAmount = (amount * rate).toFixed(2);
+  const formattedAmount = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  const formattedConverted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount * rate);
+  const transferTypeLabel = state.transferType === 'instant' ? 'SEPA Instantané' : 'SEPA Standard';
+
+  // IBAN Source Dynamique
+  const sourceIban = user?.checkingIban ? `****${user.checkingIban.slice(-4)}` : '****4291';
+  const accountName = user?.checkingAccountName || "Compte Courant";
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-slate-900 flex flex-col">
        {/* Top Navigation */}
        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-50 no-print">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-             <div className="size-8 bg-primary text-white flex items-center justify-center rounded shadow-sm">
-                {/* Abstract Logo Shape */}
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 4H10V10H4V4Z" fill="white"/>
-                  <path d="M14 4H20V10H14V4Z" fill="white"/>
-                  <path d="M4 14H10V20H4V14Z" fill="white"/>
-                </svg>
-             </div>
-             <span className="text-xl font-bold tracking-tight text-slate-900 uppercase">FINANZAS INVESTMENT</span>
+          <div className="flex items-center gap-4">
+             <button 
+                onClick={() => navigate(-1)} 
+                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
+                title="Retour"
+             >
+                <span className="material-symbols-outlined">arrow_back</span>
+                <span className="hidden sm:inline font-medium">Retour</span>
+            </button>
+            <div className="h-6 w-px bg-slate-200 mx-2"></div>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+               <div className="size-8 bg-primary text-white flex items-center justify-center rounded-sm">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4H10V10H4V4Z" fill="white"/>
+                    <path d="M14 4H20V10H14V4Z" fill="white"/>
+                    <path d="M4 14H10V20H4V14Z" fill="white"/>
+                  </svg>
+               </div>
+               <span className="text-xl font-bold tracking-tight text-slate-900 uppercase">FINANZAS INVESTMENT</span>
+            </div>
           </div>
           <div className="flex items-center gap-6">
              <nav className="hidden md:flex gap-8 text-sm font-medium text-slate-500">
-                <button onClick={() => navigate('/')} className="hover:text-primary transition-colors">Dashboard</button>
-                <button className="text-slate-900">Transfers</button>
-                <button className="hover:text-primary transition-colors">Investments</button>
-                <button onClick={() => navigate('/settings')} className="hover:text-primary transition-colors">Settings</button>
+                <button onClick={() => navigate('/')} className="hover:text-primary transition-colors">Tableau de bord</button>
+                <button className="text-slate-900 font-bold">Reçus & Documents</button>
              </nav>
              <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
-                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors relative">
+                <button 
+                  onClick={() => navigate('/notifications')}
+                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors relative"
+                >
                    <span className="material-symbols-outlined">notifications</span>
                    <span className="absolute top-2 right-2 size-2 bg-primary rounded-full border border-white"></span>
                 </button>
@@ -93,14 +138,17 @@ const ReceiptPage: React.FC = () => {
                 </div>
 
                 <h2 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Virement Effectué</h2>
-                <p className="text-slate-500 font-medium">Référence: #FI-99283-TRX</p>
+                <p className="text-slate-500 font-medium font-mono text-sm">Référence: #{referenceId}</p>
              </div>
 
              <div className="border-t border-b border-dashed border-slate-200 bg-slate-50/30 p-12 flex flex-col items-center">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">MONTANT DU VIREMENT</p>
                 <div className="flex items-baseline gap-2 text-primary">
-                   <span className="text-6xl font-black tracking-tight">1 250,00</span>
+                   <span className="text-6xl font-black tracking-tight">{formattedAmount}</span>
                    <span className="text-3xl font-bold">EUR</span>
+                </div>
+                <div className="mt-4 px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600 uppercase tracking-wider shadow-sm">
+                  Motif : {motif}
                 </div>
              </div>
 
@@ -108,23 +156,30 @@ const ReceiptPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
                    <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">DATE ET HEURE</p>
-                      <p className="font-bold text-slate-900 text-lg">24 Octobre 2023, 14:35</p>
+                      <p className="font-bold text-slate-900 text-lg capitalize">{dateStr}</p>
                    </div>
                    <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">TYPE DE TRANSFERT</p>
-                      <p className="font-bold text-slate-900 text-lg">SEPA Instantané</p>
+                      <p className="font-bold text-slate-900 text-lg">{transferTypeLabel}</p>
                    </div>
                    <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">COMPTE SOURCE</p>
-                      <p className="font-bold text-slate-900 text-lg">Compte Courant (****4291)</p>
+                      <p className="font-bold text-slate-900 text-lg">{accountName} ({sourceIban})</p>
                    </div>
                    <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">BÉNÉFICIAIRE</p>
                       <div className="flex items-center gap-3">
-                         <div className="size-10 rounded-full bg-slate-100 bg-cover bg-center" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg")'}}></div>
-                         <div>
-                            <p className="font-bold text-slate-900 text-lg">Jean Dupont</p>
-                            <p className="text-xs text-slate-400 font-medium">FR76 **** **** 1234</p>
+                         {beneficiary.img ? (
+                            <div className="size-10 rounded-full bg-slate-100 bg-cover bg-center" style={{backgroundImage: `url("${beneficiary.img}")`}}></div>
+                         ) : (
+                            <div className="size-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                <span className="material-symbols-outlined">person</span>
+                            </div>
+                         )}
+                         <div className="overflow-hidden">
+                            <p className="font-bold text-slate-900 text-lg truncate">{beneficiary.name}</p>
+                            <p className="text-xs text-slate-500 font-medium truncate font-mono">{beneficiary.iban}</p>
+                            <p className="text-xs text-slate-400 truncate">{beneficiary.bankName}</p>
                          </div>
                       </div>
                    </div>
@@ -137,12 +192,12 @@ const ReceiptPage: React.FC = () => {
                       </div>
                       <div>
                          <p className="text-xs font-bold text-primary uppercase mb-1">TAUX DE CHANGE RÉEL</p>
-                         <p className="font-bold text-slate-900 text-lg">1 EUR = 1.0912 USD</p>
+                         <p className="font-bold text-slate-900 text-lg">1 EUR = {rate} USD</p>
                       </div>
                    </div>
                    <div className="text-right">
                       <p className="text-xs font-bold text-primary uppercase mb-1">MONTANT CONVERTI</p>
-                      <p className="font-bold text-slate-900 text-lg">1 364,00 USD</p>
+                      <p className="font-bold text-slate-900 text-lg">{formattedConverted} USD</p>
                    </div>
                 </div>
 
@@ -153,12 +208,12 @@ const ReceiptPage: React.FC = () => {
                          <span className="text-xs font-bold uppercase tracking-widest">GARANTI PAR FINANZAS SECURITY</span>
                       </div>
                       <p className="text-[10px] text-slate-400 max-w-sm leading-relaxed">
-                         Ce document électronique tient lieu de preuve de transaction. Toute falsification est passible de poursuites. Digital ID: 882-991-FI-X0.
+                         Ce document électronique tient lieu de preuve de transaction. Toute falsification est passible de poursuites. Digital ID: {referenceId.slice(-10)}.
                       </p>
                    </div>
                    <div className="flex flex-col items-center gap-2">
                       <div className="size-20 bg-white border border-slate-200 p-1.5 shadow-sm">
-                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FI-99283-TRX" alt="QR Code" className="w-full h-full object-contain mix-blend-multiply" />
+                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FI-TRX-${amount}-${beneficiary.id}-${referenceId}`} alt="QR Code" className="w-full h-full object-contain mix-blend-multiply" />
                       </div>
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">VÉRIFIER REÇU</span>
                    </div>
