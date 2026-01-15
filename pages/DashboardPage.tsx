@@ -41,18 +41,18 @@ const DashboardPage: React.FC = () => {
   const today = new Date().toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-black/20 p-4 md:p-8 lg:p-10 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-black/20 p-4 md:p-8 lg:p-10 font-sans pb-24 md:pb-8">
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         
         {/* --- HEADER --- */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-slate-500 capitalize mb-1">{today}</p>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {t('dashboard.welcome')}, {user?.name.split(' ')[0]}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 self-end md:self-auto">
              <button 
                 onClick={() => navigate('/notifications')}
                 className="relative p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
@@ -75,18 +75,18 @@ const DashboardPage: React.FC = () => {
           <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 p-24 bg-blue-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
           
-          <div className="relative z-10 p-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+          <div className="relative z-10 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
             <div>
-              <p className="text-slate-400 font-medium text-sm uppercase tracking-wider mb-2">{t('dashboard.wealth_estimated')}</p>
-              <div className="flex items-baseline gap-4">
-                <span className="text-4xl md:text-5xl font-black tracking-tight">{formatCurrency(totalBalance)}</span>
+              <p className="text-slate-400 font-medium text-xs md:text-sm uppercase tracking-wider mb-2">{t('dashboard.wealth_estimated')}</p>
+              <div className="flex flex-wrap items-baseline gap-3 md:gap-4">
+                <span className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight">{formatCurrency(totalBalance)}</span>
                 <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
                   <span className="material-symbols-outlined text-green-400 text-sm">trending_up</span>
                   <span className="text-green-400 text-xs font-bold">+2.4%</span>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-end w-full md:w-auto">
                <button onClick={() => navigate('/transactions')} className="text-sm font-medium text-white/80 hover:text-white flex items-center gap-1 group">
                   {t('dashboard.analysis')}
                   <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -95,7 +95,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* --- SECTION VIREMENTS RAPIDES (RESTAURÉE) --- */}
+        {/* --- SECTION VIREMENTS RAPIDES --- */}
         <div>
             <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">contacts</span>
@@ -139,42 +139,42 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button 
             onClick={() => navigate('/virement-beneficiary')}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-primary/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-primary/30 transition-all group"
           >
-            <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+            <div className="size-10 md:size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">swap_horiz</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{t('dashboard.quick_transfer_action')}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs md:text-sm text-center">{t('dashboard.quick_transfer_action')}</span>
           </button>
           
           <button 
             onClick={() => navigate('/cards')}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-blue-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-blue-500/30 transition-all group"
           >
-            <div className="size-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            <div className="size-10 md:size-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">credit_card</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{t('dashboard.quick_card')}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs md:text-sm text-center">{t('dashboard.quick_card')}</span>
           </button>
 
           <button 
             onClick={(e) => copyIban(e)}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-emerald-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-emerald-500/30 transition-all group"
           >
-            <div className={`size-12 rounded-full flex items-center justify-center transition-colors ${copiedIban ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'}`}>
+            <div className={`size-10 md:size-12 rounded-full flex items-center justify-center transition-colors ${copiedIban ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'}`}>
               <span className="material-symbols-outlined">{copiedIban ? 'check' : 'content_copy'}</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{copiedIban ? t('dashboard.rib_copied') : t('dashboard.quick_rib')}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs md:text-sm text-center">{copiedIban ? t('dashboard.rib_copied') : t('dashboard.quick_rib')}</span>
           </button>
 
           <button 
             onClick={() => navigate('/statement')}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-orange-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-orange-500/30 transition-all group"
           >
-            <div className="size-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
+            <div className="size-10 md:size-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">description</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{t('dashboard.quick_docs')}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs md:text-sm text-center">{t('dashboard.quick_docs')}</span>
           </button>
         </div>
 
@@ -190,7 +190,7 @@ const DashboardPage: React.FC = () => {
                       <span className="material-symbols-outlined text-slate-600 dark:text-slate-300 group-hover:text-white">account_balance_wallet</span>
                    </div>
                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm md:text-base">
                         {accountName}
                         <span className="material-symbols-outlined text-slate-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
                       </h3>
@@ -201,7 +201,7 @@ const DashboardPage: React.FC = () => {
              </div>
              
              <div className="mt-8 z-10">
-                <p className="text-3xl font-black text-slate-900 dark:text-white">{formatCurrency(checkingBalance)}</p>
+                <p className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{formatCurrency(checkingBalance)}</p>
                 <div className="mt-4 flex gap-2">
                    <div className="h-1.5 flex-1 bg-primary rounded-full"></div>
                    <div className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
@@ -217,13 +217,13 @@ const DashboardPage: React.FC = () => {
                       <span className="material-symbols-outlined text-primary">savings</span>
                    </div>
                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white">Livret A</h3>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm md:text-base">Livret A</h3>
                       <p className="text-xs text-green-600 font-bold">3.00% Net</p>
                    </div>
                 </div>
              </div>
              <div className="mt-8">
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(savingsBalance)}</p>
+                <p className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(savingsBalance)}</p>
                 <p className="text-xs text-slate-500 mt-1">+ 125,40 € d'intérêts (YTD)</p>
              </div>
           </div>
@@ -284,35 +284,35 @@ const DashboardPage: React.FC = () => {
                 <table className="w-full text-left border-collapse">
                    <thead>
                       <tr className="text-xs uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                         <th className="py-3 font-semibold">Transaction</th>
-                         <th className="py-3 font-semibold">Catégorie</th>
-                         <th className="py-3 font-semibold text-right">Montant</th>
-                         <th className="py-3 font-semibold text-right">Statut</th>
+                         <th className="py-3 font-semibold whitespace-nowrap pr-4">Transaction</th>
+                         <th className="py-3 font-semibold whitespace-nowrap px-4">Catégorie</th>
+                         <th className="py-3 font-semibold text-right whitespace-nowrap">Montant</th>
+                         <th className="py-3 font-semibold text-right hidden sm:table-cell">Statut</th>
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {recentTransactions.map((tx) => (
                          <tr key={tx.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => navigate('/transactions')}>
-                            <td className="py-4">
+                            <td className="py-4 pr-4">
                                <div className="flex items-center gap-3">
-                                  <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                                  <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
                                      <span className="material-symbols-outlined text-[20px]">{tx.icon}</span>
                                   </div>
-                                  <div>
-                                     <p className="font-bold text-sm text-slate-900 dark:text-white">{tx.name}</p>
-                                     <p className="text-xs text-slate-500">{formatTxDate(tx.date)}</p>
+                                  <div className="min-w-0">
+                                     <p className="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-none">{tx.name}</p>
+                                     <p className="text-xs text-slate-500 truncate">{formatTxDate(tx.date)}</p>
                                   </div>
                                </div>
                             </td>
-                            <td className="py-4">
-                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300">
+                            <td className="py-4 px-4">
+                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap">
                                   {tx.cat}
                                </span>
                             </td>
-                            <td className={`py-4 text-right font-bold text-sm ${tx.amt > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>
+                            <td className={`py-4 text-right font-bold text-sm ${tx.amt > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'} whitespace-nowrap`}>
                                {tx.amt > 0 ? '+' : ''} {formatCurrency(tx.amt)}
                             </td>
-                            <td className="py-4 text-right">
+                            <td className="py-4 text-right hidden sm:table-cell">
                                <span className={`text-xs font-bold ${tx.status === 'Complété' ? 'text-emerald-500' : 'text-amber-500'}`}>
                                   {tx.status}
                                </span>

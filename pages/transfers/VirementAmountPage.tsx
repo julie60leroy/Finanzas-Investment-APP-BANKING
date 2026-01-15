@@ -19,12 +19,10 @@ const VirementAmountPage: React.FC = () => {
 
   const [amount, setAmount] = useState(1000);
   const [transferType, setTransferType] = useState<'standard' | 'instant'>('instant');
-  const [motif, setMotif] = useState("Achat de biens ou services"); // Motif par défaut
+  const [motif, setMotif] = useState("Achat de biens ou services");
   const [error, setError] = useState<string | null>(null);
   
-  // Rate calc
   const rate = 1.0842;
-  // Frais dynamiques selon le type
   const fees = transferType === 'instant' ? 4.52 : 0.50; 
   const convertedAmount = (amount - fees) * rate;
 
@@ -36,7 +34,6 @@ const VirementAmountPage: React.FC = () => {
     return null;
   };
 
-  // Check validation on change or type switch
   useEffect(() => {
     setError(validate(amount));
   }, [amount, transferType, user]);
@@ -55,7 +52,7 @@ const VirementAmountPage: React.FC = () => {
         transferType: transferType,
         fees: fees,
         beneficiary: beneficiary,
-        motif: motif // Transmission du motif
+        motif: motif
       } 
     });
   };
@@ -71,28 +68,28 @@ const VirementAmountPage: React.FC = () => {
     "Règlement de facture"
   ];
 
-  if (!beneficiary) return null; // Prevent render before redirect
+  if (!beneficiary) return null;
 
   return (
-    <div className="flex-1 px-4 py-8 lg:px-8 xl:px-40 overflow-y-auto bg-background-light dark:bg-background-dark">
+    <div className="flex-1 px-4 py-8 lg:px-8 xl:px-40 overflow-y-auto bg-background-light dark:bg-background-dark pb-24 md:pb-8">
       <div className="mx-auto max-w-6xl">
         
         {/* Header */}
-        <div className="mb-10 flex flex-col gap-2">
+        <div className="mb-8 md:mb-10 flex flex-col gap-2">
           <button 
               onClick={() => navigate('/virement-beneficiary')} 
               className="self-start flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-4"
           >
               <span className="material-symbols-outlined text-lg">arrow_back</span>
-              Retour au bénéficiaire
+              Retour
           </button>
-          <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Virement International</h1>
-          <p className="text-slate-500 text-lg">Envoyez des fonds en toute sécurité vers l'étranger.</p>
+          <h1 className="text-2xl md:text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Virement International</h1>
+          <p className="text-slate-500 text-sm md:text-lg">Envoyez des fonds en toute sécurité.</p>
         </div>
 
         {/* Stepper */}
-        <div className="mb-12">
-          <div className="relative flex items-center justify-between w-full max-w-3xl mx-auto">
+        <div className="mb-12 md:mb-16">
+          <div className="relative flex items-center justify-between w-full max-w-3xl mx-auto px-2">
             {/* Background Line */}
             <div className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 bg-slate-100 dark:bg-slate-800"></div>
             
@@ -100,34 +97,34 @@ const VirementAmountPage: React.FC = () => {
             <div className="absolute left-0 top-1/2 h-0.5 w-1/2 -translate-y-1/2 bg-gradient-to-r from-slate-200 to-primary"></div>
 
             {/* Step 1: Completed */}
-            <div className="relative z-10 flex flex-col items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm ring-4 ring-white dark:ring-background-dark">
+            <div className="relative z-10 flex flex-col items-center gap-2 md:gap-3">
+              <div className="flex size-8 md:size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm ring-4 ring-white dark:ring-background-dark">
                 <span className="material-symbols-outlined text-sm font-bold">check</span>
               </div>
-              <span className="absolute top-14 text-sm font-medium text-slate-500 whitespace-nowrap">Bénéficiaire</span>
+              <span className="absolute top-10 md:top-14 text-[10px] md:text-sm font-medium text-slate-500 whitespace-nowrap">Bénéficiaire</span>
             </div>
 
             {/* Step 2: Active */}
-            <div className="relative z-10 flex flex-col items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg ring-4 ring-white dark:ring-background-dark">
-                <span className="text-sm font-bold">2</span>
+            <div className="relative z-10 flex flex-col items-center gap-2 md:gap-3">
+              <div className="flex size-8 md:size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg ring-4 ring-white dark:ring-background-dark">
+                <span className="text-xs md:text-sm font-bold">2</span>
               </div>
-              <span className="absolute top-14 text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">Montant et Devises</span>
+              <span className="absolute top-10 md:top-14 text-[10px] md:text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">Montant</span>
             </div>
 
             {/* Step 3: Pending */}
-            <div className="relative z-10 flex flex-col items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-400 ring-4 ring-white dark:ring-background-dark">
-                <span className="text-sm font-bold">3</span>
+            <div className="relative z-10 flex flex-col items-center gap-2 md:gap-3">
+              <div className="flex size-8 md:size-10 items-center justify-center rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-400 ring-4 ring-white dark:ring-background-dark">
+                <span className="text-xs md:text-sm font-bold">3</span>
               </div>
-              <span className="absolute top-14 text-sm font-medium text-slate-400 whitespace-nowrap">Sécurité</span>
+              <span className="absolute top-10 md:top-14 text-[10px] md:text-sm font-medium text-slate-400 whitespace-nowrap">Sécurité</span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-2">
           {/* Left Column: Conversion Form */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
+          <div className="lg:col-span-7 flex flex-col gap-6 order-2 lg:order-1">
             <div className={`rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border ${error ? 'border-red-300 dark:border-red-900/50' : 'border-slate-100 dark:border-slate-800'} transition-colors`}>
               
               {/* Source Amount */}
@@ -164,7 +161,7 @@ const VirementAmountPage: React.FC = () => {
                       <select 
                         value={motif}
                         onChange={(e) => setMotif(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 pr-10 focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white appearance-none cursor-pointer"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3.5 pr-10 focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 dark:text-white appearance-none cursor-pointer truncate"
                       >
                           {motifs.map((m) => (
                               <option key={m} value={m}>{m}</option>
@@ -188,7 +185,7 @@ const VirementAmountPage: React.FC = () => {
                         <span className="material-symbols-outlined text-[14px]">remove</span>
                       </div>
                       <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{fees.toFixed(2)} EUR</span>
-                      <span className="text-sm text-slate-400">Frais ({transferType === 'instant' ? 'Instantané' : 'Standard'})</span>
+                      <span className="text-sm text-slate-400">Frais</span>
                     </div>
                   </div>
                   {/* Converted Amount */}
@@ -199,7 +196,7 @@ const VirementAmountPage: React.FC = () => {
                         <span className="material-symbols-outlined text-[14px]">drag_handle</span>
                       </div>
                       <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{(amount - fees) > 0 ? (amount - fees).toFixed(2) : '0.00'} EUR</span>
-                      <span className="text-sm text-slate-400">Montant converti</span>
+                      <span className="text-sm text-slate-400">Net</span>
                     </div>
                   </div>
                   {/* Rate */}
@@ -210,10 +207,8 @@ const VirementAmountPage: React.FC = () => {
                         <span className="material-symbols-outlined text-[14px]">close</span>
                       </div>
                       <span className="text-sm font-bold text-primary">{rate}</span>
-                      <span className="text-sm text-slate-500">Taux de change garanti (24h)</span>
-                      <span className="material-symbols-outlined text-[16px] text-primary cursor-help" title="Taux en temps réel">info</span>
+                      <span className="text-xs text-slate-500">Taux garanti (24h)</span>
                     </div>
-                    <button className="text-xs font-medium text-primary hover:underline">Voir graphique</button>
                   </div>
                 </div>
               </div>
@@ -252,7 +247,7 @@ const VirementAmountPage: React.FC = () => {
                         {transferType === 'instant' && <span className="material-symbols-outlined text-primary">check_circle</span>}
                      </div>
                      <p className={`font-bold ${transferType === 'instant' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>Instantané</p>
-                     <p className="text-xs text-slate-500 mt-1 mb-3">Arrivée en quelques secondes. Idéal pour les urgences.</p>
+                     <p className="text-xs text-slate-500 mt-1 mb-3">Arrivée en quelques secondes.</p>
                      <p className="text-xs font-bold text-slate-900 dark:text-white">Frais : 4.52 €</p>
                   </button>
 
@@ -267,7 +262,7 @@ const VirementAmountPage: React.FC = () => {
                         {transferType === 'standard' && <span className="material-symbols-outlined text-primary">check_circle</span>}
                      </div>
                      <p className={`font-bold ${transferType === 'standard' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>Standard</p>
-                     <p className="text-xs text-slate-500 mt-1 mb-3">Arrivée sous 24-48h. Économique pour les gros montants.</p>
+                     <p className="text-xs text-slate-500 mt-1 mb-3">Arrivée sous 24-48h.</p>
                      <p className="text-xs font-bold text-slate-900 dark:text-white">Frais : 0.50 €</p>
                   </button>
                </div>
@@ -293,16 +288,15 @@ const VirementAmountPage: React.FC = () => {
                   disabled={!!error}
                   className={`group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl px-8 py-4 text-white shadow-lg transition-all active:scale-[0.98] ${error ? 'bg-slate-400 cursor-not-allowed opacity-70' : 'bg-primary hover:bg-primary-hover'}`}
                 >
-                  <span className="text-lg font-bold">Valider le transfert</span>
+                  <span className="text-lg font-bold">Valider</span>
                   {!error && <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>}
                   {error && <span className="material-symbols-outlined">block</span>}
                 </button>
-                <p className="text-center text-xs text-slate-400">En cliquant sur valider, vous acceptez les <a className="text-slate-600 dark:text-slate-300 underline hover:text-slate-900" href="#">conditions générales</a> de Finanzas.</p>
               </div>
           </div>
 
-          {/* Right Column: Beneficiary & Security */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
+          {/* Right Column: Beneficiary & Security (Order 1 on mobile) */}
+          <div className="lg:col-span-5 flex flex-col gap-6 order-1 lg:order-2">
             
             {/* Beneficiary Card */}
             <div className="flex flex-col gap-4 rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-slate-100 dark:border-slate-800">
@@ -335,8 +329,8 @@ const VirementAmountPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Security Check Card */}
-            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-700/50 p-6">
+            {/* Security Check Card (Hidden on very small screens to save space if needed) */}
+            <div className="hidden sm:block rounded-2xl border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-700/50 p-6">
               <div className="flex gap-4">
                 <div className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">
                   <span className="material-symbols-outlined">shield_lock</span>
@@ -344,23 +338,10 @@ const VirementAmountPage: React.FC = () => {
                 <div className="flex flex-col gap-2">
                   <h3 className="text-base font-bold text-yellow-800 dark:text-yellow-400">Vérification de sécurité</h3>
                   <p className="text-sm leading-relaxed text-yellow-700 dark:text-yellow-200/80">
-                    Ce bénéficiaire a été ajouté récemment. Une authentification forte (SCA) sera requise à l'étape suivante pour valider la transaction.
+                    Ce bénéficiaire a été ajouté récemment. Une authentification forte (SCA) sera requise.
                   </p>
-                  <label className="mt-2 flex items-start gap-3 cursor-pointer group">
-                    <input 
-                      className="mt-1 rounded border-yellow-300 bg-white text-yellow-600 focus:ring-yellow-600 focus:ring-offset-0" 
-                      type="checkbox"
-                    />
-                    <span className="text-sm text-yellow-800 dark:text-yellow-300 group-hover:text-yellow-900 dark:group-hover:text-yellow-200 transition-colors">Je confirme connaître ce bénéficiaire.</span>
-                  </label>
                 </div>
               </div>
-            </div>
-
-            {/* Support Link */}
-            <div className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-slate-50 dark:bg-slate-800 p-4 border border-dashed border-slate-200 dark:border-slate-700">
-              <span className="material-symbols-outlined text-slate-400">headset_mic</span>
-              <span className="text-sm text-slate-500">Besoin d'aide ? <a className="font-medium text-slate-900 dark:text-white hover:underline" href="#">Contacter le support</a></span>
             </div>
 
           </div>

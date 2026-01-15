@@ -46,7 +46,7 @@ const CardsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark overflow-y-auto">
+    <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark overflow-y-auto pb-24 md:pb-8">
       {/* Page Heading */}
       <div className="px-4 md:px-8 pt-6 md:pt-8 pb-4">
         <div className="flex flex-wrap justify-between items-end gap-3">
