@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { notifications, markAllNotificationsAsRead } = useApp();
+  const { notifications, markAllNotificationsAsRead, t } = useApp(); // Ajout de 't'
   const [activeTab, setActiveTab] = useState<'Toutes' | 'Alertes' | 'Transactions'>('Toutes');
 
   // Logic to format date nicely
@@ -65,14 +65,14 @@ const NotificationsPage: React.FC = () => {
             >
                 <span className="material-symbols-outlined">arrow_back</span>
             </button>
-            <h1 className="text-slate-900 dark:text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">Centre de Notifications</h1>
+            <h1 className="text-slate-900 dark:text-white text-2xl md:text-3xl font-black leading-tight tracking-tight">{t('notifications.title')}</h1>
           </div>
           <button 
             onClick={markAllNotificationsAsRead}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm active:scale-95"
           >
             <span className="material-symbols-outlined text-sm">done_all</span>
-            <span>Tout marquer comme lu</span>
+            <span>{t('notifications.mark_all')}</span>
           </button>
         </div>
         
@@ -83,19 +83,19 @@ const NotificationsPage: React.FC = () => {
                 onClick={() => setActiveTab('Toutes')}
                 className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-2 transition-colors ${activeTab === 'Toutes' ? 'border-b-primary text-primary' : 'border-b-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
             >
-              <p className="text-sm font-bold leading-normal tracking-wide">Toutes</p>
+              <p className="text-sm font-bold leading-normal tracking-wide">{t('notifications.tabs.all')}</p>
             </button>
             <button 
                 onClick={() => setActiveTab('Alertes')}
                 className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-2 transition-colors ${activeTab === 'Alertes' ? 'border-b-primary text-primary' : 'border-b-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
             >
-              <p className="text-sm font-bold leading-normal tracking-wide">Alertes</p>
+              <p className="text-sm font-bold leading-normal tracking-wide">{t('notifications.tabs.alerts')}</p>
             </button>
             <button 
                 onClick={() => setActiveTab('Transactions')}
                 className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-2 transition-colors ${activeTab === 'Transactions' ? 'border-b-primary text-primary' : 'border-b-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
             >
-              <p className="text-sm font-bold leading-normal tracking-wide">Transactions</p>
+              <p className="text-sm font-bold leading-normal tracking-wide">{t('notifications.tabs.transactions')}</p>
             </button>
           </div>
         </div>
@@ -105,7 +105,7 @@ const NotificationsPage: React.FC = () => {
           {/* Group: Today */}
           {todaysNotifs.length > 0 && (
             <div>
-                <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight pb-4">Aujourd'hui</h3>
+                <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight pb-4">{t('notifications.sections.today')}</h3>
                 <div className="flex flex-col gap-3">
                 {todaysNotifs.map(notif => (
                     <div key={notif.id} className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer shadow-sm ${notif.read ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-90' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 ring-1 ring-primary/5'}`}>
@@ -129,7 +129,7 @@ const NotificationsPage: React.FC = () => {
           {/* Group: Older */}
           {olderNotifs.length > 0 && (
             <div>
-                <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight pb-4">Plus tôt</h3>
+                <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight pb-4">{t('notifications.sections.earlier')}</h3>
                 <div className="flex flex-col gap-3">
                 {olderNotifs.map(notif => (
                     <div key={notif.id} className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer bg-white dark:bg-slate-900 opacity-90 hover:opacity-100">
@@ -154,7 +154,7 @@ const NotificationsPage: React.FC = () => {
                 <div className="mx-auto size-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 mb-4">
                     <span className="material-symbols-outlined text-3xl">notifications_off</span>
                 </div>
-                <p className="text-slate-500 font-medium">Aucune notification pour le moment.</p>
+                <p className="text-slate-500 font-medium">{t('notifications.empty')}</p>
              </div>
           )}
         </div>
@@ -165,12 +165,12 @@ const NotificationsPage: React.FC = () => {
         <div className="sticky top-8 bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <span className="material-symbols-outlined text-primary">settings_suggest</span>
-            <h2 className="text-slate-900 dark:text-white text-lg font-bold">Paramètres</h2>
+            <h2 className="text-slate-900 dark:text-white text-lg font-bold">{t('notifications.settings_title')}</h2>
           </div>
 
           {/* Channel Settings */}
           <div className="mb-8">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Canaux de diffusion</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">{t('notifications.channels')}</p>
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -207,7 +207,7 @@ const NotificationsPage: React.FC = () => {
 
           {/* Category Settings */}
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Catégories d'alertes</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">{t('notifications.categories')}</p>
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer group">
                 <div className="relative flex items-center">
@@ -226,7 +226,7 @@ const NotificationsPage: React.FC = () => {
 
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
             <button className="w-full py-2.5 px-4 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
-              Sauvegarder les réglages
+              {t('notifications.save_settings')}
             </button>
           </div>
         </div>

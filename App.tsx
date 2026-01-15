@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import MobileNav from './components/MobileNav';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -36,7 +37,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Sidebar Responsive */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative w-full">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative w-full pb-24 md:pb-0">
         {/* Mobile Header (Visible uniquement sur mobile) */}
         <header className="md:hidden flex items-center justify-between p-4 bg-slate-900 text-white sticky top-0 z-30 shadow-md">
           <div className="flex items-center gap-4">
@@ -64,6 +65,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {children}
       </main>
+      
+      {/* Mobile Navigation Bar (Bottom) */}
+      <MobileNav />
     </div>
   );
 };

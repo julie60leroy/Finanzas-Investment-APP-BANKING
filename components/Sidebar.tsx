@@ -9,27 +9,27 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { user, logout, notifications } = useApp();
+  const { user, logout, notifications, t } = useApp();
 
   // Calcul du nombre de notifications non lues
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const navItems = [
-    { path: "/", label: "Tableau de bord", icon: "dashboard" },
-    { path: "/transactions", label: "Transactions", icon: "receipt_long" },
-    { path: "/virement-beneficiary", label: "Virements", icon: "swap_horiz" },
-    { path: "/cards", label: "Cartes", icon: "credit_card" },
-    { path: "/notifications", label: "Notifications", icon: "notifications" },
-    { path: "/settings", label: "Paramètres", icon: "settings" },
-    { path: "/profile", label: "Mon Profil", icon: "person" }
+    { path: "/", label: t('nav.dashboard'), icon: "dashboard" },
+    { path: "/transactions", label: t('nav.transactions'), icon: "receipt_long" },
+    { path: "/virement-beneficiary", label: t('nav.transfers'), icon: "swap_horiz" },
+    { path: "/cards", label: t('nav.cards'), icon: "credit_card" },
+    { path: "/notifications", label: t('nav.notifications'), icon: "notifications" },
+    { path: "/settings", label: t('nav.settings'), icon: "settings" },
+    { path: "/profile", label: t('nav.profile'), icon: "person" }
   ];
 
   return (
     <>
-      {/* Overlay pour mobile (fond sombre quand le menu est ouvert) */}
+      {/* Overlay pour mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
           onClick={onClose}
         ></div>
       )}
@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar Container */}
       <aside 
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 bg-slate-darker p-6 flex flex-col justify-between shrink-0 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
+          fixed inset-y-0 left-0 z-[60] w-72 bg-slate-darker p-6 flex flex-col justify-between shrink-0 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
           md:relative md:translate-x-0 md:flex
         `}
@@ -53,7 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 Finanzas<span className="text-primary">.</span>
               </h1>
             </div>
-            {/* Bouton fermeture mobile */}
             <button 
               onClick={onClose} 
               className="md:hidden text-slate-400 hover:text-white transition-colors"
@@ -68,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={onClose} // Ferme le menu au clic sur mobile
+                onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${
                   location.pathname === item.path
                     ? 'bg-primary text-white shadow-md shadow-primary/20'
@@ -94,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               className="mt-8 flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all border border-white/5 border-dashed"
             >
               <span className="material-symbols-outlined">admin_panel_settings</span>
-              <span className="text-sm font-medium">Administration</span>
+              <span className="text-sm font-medium">{t('nav.admin')}</span>
             </Link>
           </nav>
         </div>
@@ -118,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-all mt-2"
           >
             <span className="material-symbols-outlined">logout</span>
-            <span className="text-sm font-medium">Déconnexion</span>
+            <span className="text-sm font-medium">{t('nav.logout')}</span>
           </button>
         </div>
       </aside>

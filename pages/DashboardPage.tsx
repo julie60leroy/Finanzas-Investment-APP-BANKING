@@ -5,48 +5,40 @@ import { useApp } from '../context/AppContext';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, transactions, notifications, formatTxDate } = useApp();
+  const { user, transactions, notifications, beneficiaries, formatTxDate, t, language } = useApp();
   const [copiedIban, setCopiedIban] = useState(false);
 
   // --- Calculs Financiers ---
   const checkingBalance = user?.accounts.checking || 0;
   const savingsBalance = user?.accounts.savings || 0;
-  const cryptoBalance = 12500; // Simulé pour l'exemple "Investissement"
+  const cryptoBalance = 12500;
   const totalBalance = checkingBalance + savingsBalance + cryptoBalance;
 
-  // Récupération dynamique
   const currentIban = user?.checkingIban || "FR76 3000 6000 0123 4567 8901 234";
   const maskedIban = `FR76 •••• •••• ${currentIban.slice(-4)}`;
   const accountName = user?.checkingAccountName || "Compte Courant";
 
-  // Formatage des devises
   const formatCurrency = (amount: number) => 
-    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+    new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
 
-  // Données du graphique (Simulées)
   const chartData = [
-    { name: 'Logement & Charges', value: 35, color: '#1e293b' }, // Slate-800
-    { name: 'Alimentation', value: 25, color: '#334155' }, // Slate-700
-    { name: 'Loisirs & Sorties', value: 25, color: '#D92D20' }, // Primary Red
-    { name: 'Épargne & Invest.', value: 15, color: '#94a3b8' }, // Slate-400
+    { name: 'Logement', value: 35, color: '#1e293b' },
+    { name: 'Alim.', value: 25, color: '#334155' },
+    { name: 'Loisirs', value: 25, color: '#D92D20' },
+    { name: 'Épargne', value: 15, color: '#94a3b8' },
   ];
 
-  // Dernières transactions (Top 5)
   const recentTransactions = transactions.slice(0, 5);
-
-  // Unread notifications count
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Fonction utilitaire pour copier l'IBAN
   const copyIban = (e?: React.MouseEvent) => {
-    e?.stopPropagation(); // Empêche le clic de se propager à la carte
+    e?.stopPropagation();
     navigator.clipboard.writeText(currentIban);
     setCopiedIban(true);
     setTimeout(() => setCopiedIban(false), 2000);
   };
 
-  // Date du jour formatée
-  const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-black/20 p-4 md:p-8 lg:p-10 font-sans">
@@ -57,7 +49,7 @@ const DashboardPage: React.FC = () => {
           <div>
             <p className="text-sm font-medium text-slate-500 capitalize mb-1">{today}</p>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Bonjour, {user?.name.split(' ')[0]}
+              {t('dashboard.welcome')}, {user?.name.split(' ')[0]}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -78,14 +70,14 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* --- HERO CARD: PATRIMOINE --- */}
+        {/* --- HERO CARD --- */}
         <div className="relative overflow-hidden rounded-2xl bg-[#1D2939] text-white shadow-xl shadow-slate-900/10">
           <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 p-24 bg-blue-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
           
           <div className="relative z-10 p-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
             <div>
-              <p className="text-slate-400 font-medium text-sm uppercase tracking-wider mb-2">Patrimoine Total Estimé</p>
+              <p className="text-slate-400 font-medium text-sm uppercase tracking-wider mb-2">{t('dashboard.wealth_estimated')}</p>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl md:text-5xl font-black tracking-tight">{formatCurrency(totalBalance)}</span>
                 <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
@@ -96,11 +88,51 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="flex flex-col items-end">
                <button onClick={() => navigate('/transactions')} className="text-sm font-medium text-white/80 hover:text-white flex items-center gap-1 group">
-                  Voir l'analyse détaillée
+                  {t('dashboard.analysis')}
                   <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                </button>
             </div>
           </div>
+        </div>
+
+        {/* --- SECTION VIREMENTS RAPIDES (RESTAURÉE) --- */}
+        <div>
+            <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">contacts</span>
+                {t('dashboard.quick_transfer_title')}
+            </h3>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                {/* Bouton Ajouter */}
+                <div 
+                    onClick={() => navigate('/virement-beneficiary')}
+                    className="flex flex-col items-center gap-2 cursor-pointer group min-w-[80px]"
+                >
+                    <div className="size-14 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:border-primary group-hover:text-primary transition-all bg-white dark:bg-slate-900">
+                        <span className="material-symbols-outlined text-2xl">add</span>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-500 group-hover:text-primary">{t('dashboard.add_beneficiary')}</span>
+                </div>
+
+                {/* Liste des Bénéficiaires */}
+                {beneficiaries.map((b) => (
+                    <div 
+                        key={b.id}
+                        onClick={() => navigate('/virement-amount', { state: { beneficiary: b } })}
+                        className="flex flex-col items-center gap-2 cursor-pointer group min-w-[80px]"
+                    >
+                        <div className="relative">
+                            <div 
+                                className="size-14 rounded-full bg-cover bg-center border-2 border-white dark:border-slate-800 shadow-sm group-hover:scale-105 transition-transform"
+                                style={{ backgroundImage: `url("${b.img}")` }}
+                            ></div>
+                            <div className="absolute -bottom-1 -right-1 bg-primary text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
+                                {t('dashboard.send_money')}
+                            </div>
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate w-20 text-center">{b.name.split(' ')[0]}</span>
+                    </div>
+                ))}
+            </div>
         </div>
 
         {/* --- QUICK ACTIONS --- */}
@@ -112,7 +144,7 @@ const DashboardPage: React.FC = () => {
             <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">swap_horiz</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">Nouveau Virement</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{t('dashboard.quick_transfer_action')}</span>
           </button>
           
           <button 
@@ -122,7 +154,7 @@ const DashboardPage: React.FC = () => {
             <div className="size-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">credit_card</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">Gérer ma Carte</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{t('dashboard.quick_card')}</span>
           </button>
 
           <button 
@@ -132,7 +164,7 @@ const DashboardPage: React.FC = () => {
             <div className={`size-12 rounded-full flex items-center justify-center transition-colors ${copiedIban ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'}`}>
               <span className="material-symbols-outlined">{copiedIban ? 'check' : 'content_copy'}</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{copiedIban ? 'IBAN Copié !' : 'Copier mon RIB'}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{copiedIban ? t('dashboard.rib_copied') : t('dashboard.quick_rib')}</span>
           </button>
 
           <button 
@@ -142,13 +174,12 @@ const DashboardPage: React.FC = () => {
             <div className="size-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">description</span>
             </div>
-            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">Relevés & Docs</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 text-sm text-center">{t('dashboard.quick_docs')}</span>
           </button>
         </div>
 
         {/* --- ACCOUNTS GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Account - CLICKABLE */}
           <div 
             onClick={() => navigate('/account-checking')}
             className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
@@ -175,14 +206,10 @@ const DashboardPage: React.FC = () => {
                    <div className="h-1.5 flex-1 bg-primary rounded-full"></div>
                    <div className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">Plafond de dépenses : 1 250 € / 2 500 €</p>
+                <p className="mt-2 text-xs text-slate-500">Plafond : 1 250 € / 2 500 €</p>
              </div>
-             
-             {/* Decorative Card Preview */}
-             <div className="absolute -bottom-10 -right-10 w-48 h-32 bg-gradient-to-br from-slate-800 to-black rounded-xl rotate-12 opacity-10 dark:opacity-40 group-hover:scale-105 transition-transform duration-500"></div>
           </div>
 
-          {/* Savings Account */}
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
              <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
@@ -202,12 +229,10 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* --- BOTTOM SECTION: ANALYTICS & HISTORY --- */}
+        {/* --- BOTTOM SECTION --- */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          
-          {/* Charts */}
           <div className="xl:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-             <h3 className="font-bold text-slate-900 dark:text-white mb-6">Répartition des Dépenses</h3>
+             <h3 className="font-bold text-slate-900 dark:text-white mb-6">{t('dashboard.expenses_breakdown')}</h3>
              <div className="relative h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -230,14 +255,12 @@ const DashboardPage: React.FC = () => {
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                {/* Center Label */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                   <span className="text-xs text-slate-400 font-medium uppercase">Total Sorties</span>
+                   <span className="text-xs text-slate-400 font-medium uppercase">{t('dashboard.total_out')}</span>
                    <span className="text-xl font-bold text-slate-900 dark:text-white">2 430 €</span>
                 </div>
              </div>
              
-             {/* Legend */}
              <div className="mt-4 space-y-3">
                 {chartData.map((item, idx) => (
                    <div key={idx} className="flex items-center justify-between text-sm">
@@ -251,11 +274,10 @@ const DashboardPage: React.FC = () => {
              </div>
           </div>
 
-          {/* Transaction List */}
           <div className="xl:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-slate-900 dark:text-white">Derniers Mouvements</h3>
-                <Link to="/transactions" className="text-sm font-bold text-primary hover:underline">Tout voir</Link>
+                <h3 className="font-bold text-slate-900 dark:text-white">{t('dashboard.recent_moves')}</h3>
+                <Link to="/transactions" className="text-sm font-bold text-primary hover:underline">{t('dashboard.see_all')}</Link>
              </div>
              
              <div className="overflow-x-auto">
@@ -298,7 +320,7 @@ const DashboardPage: React.FC = () => {
                          </tr>
                       ))}
                       {recentTransactions.length === 0 && (
-                         <tr><td colSpan={4} className="py-8 text-center text-slate-400">Aucune transaction récente</td></tr>
+                         <tr><td colSpan={4} className="py-8 text-center text-slate-400">{t('dashboard.no_tx')}</td></tr>
                       )}
                    </tbody>
                 </table>

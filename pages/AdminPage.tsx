@@ -1,10 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const AdminPage: React.FC = () => {
   const navigate = useNavigate();
+  const { injectFunds, user } = useApp();
+  const [amount, setAmount] = useState<number>(0);
+  const [motif, setMotif] = useState("Dividendes annuels");
+  const [currency, setCurrency] = useState("EUR");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleInjection = () => {
+    if (amount <= 0) return;
+    setIsLoading(true);
+    setTimeout(() => {
+        injectFunds(amount, currency, motif);
+        setIsLoading(false);
+        setShowSuccess(true);
+        setAmount(0);
+        
+        // Cache le message de succès après 3 secondes
+        setTimeout(() => setShowSuccess(false), 3000);
+    }, 1000);
+  };
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-white text-slate-800 font-display antialiased selection:bg-primary selection:text-white">
+    <div className="flex h-screen w-full overflow-hidden bg-white text-slate-800 font-display antialiased selection:bg-primary selection:text-white relative">
+      
+      {/* Toast Succès */}
+      {showSuccess && (
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-[slideIn_0.3s_ease-out]">
+            <div className="bg-white/20 p-2 rounded-full">
+                <span className="material-symbols-outlined text-white">check</span>
+            </div>
+            <div>
+                <p className="font-bold">Injection confirmée</p>
+                <p className="text-xs text-white/90">Les fonds sont disponibles sur le compte et visibles dans le relevé.</p>
+            </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 bg-slate-darker border-r border-slate-800 flex flex-col hidden md:flex">
         <div className="p-6 flex items-center gap-3">
@@ -119,19 +155,20 @@ const AdminPage: React.FC = () => {
                   <label className="block text-sm font-semibold text-slate-800 mb-2">Bénéficiaire cible</label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <span className="material-symbols-outlined text-slate-500 group-focus-within:text-primary transition-colors">search</span>
+                      <span className="material-symbols-outlined text-slate-500 group-focus-within:text-primary transition-colors">person</span>
                     </div>
+                    {/* Input ReadOnly pointant vers l'utilisateur connecté */}
                     <input 
-                      autoComplete="off" 
-                      className="block w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 placeholder-slate-400 transition-all shadow-sm text-lg" 
-                      placeholder="Rechercher par ID, Nom ou Email..." 
+                      readOnly
+                      className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold shadow-sm text-lg cursor-not-allowed" 
                       type="text" 
+                      value={user ? `${user.name} (Compte Actuel)` : "Utilisateur non connecté"}
                     />
-                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                      <kbd className="hidden sm:inline-block px-2 py-1 text-xs font-semibold text-slate-500 bg-slate-100 rounded border border-slate-200">CMD + K</kbd>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center gap-2">
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 uppercase tracking-wider">Vérifié</span>
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">Le système vérifiera automatiquement le statut KYC du compte destinataire.</p>
+                  <p className="mt-2 text-xs text-slate-500">L'injection sera créditée sur le solde disponible de ce compte.</p>
                 </div>
 
                 <div className="h-px bg-slate-100 w-full"></div>
@@ -144,14 +181,18 @@ const AdminPage: React.FC = () => {
                       <input 
                         className="block w-full pl-4 pr-16 py-3.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 font-mono text-xl" 
                         placeholder="0.00" 
-                        type="number" 
+                        type="number"
+                        value={amount === 0 ? '' : amount}
+                        onChange={(e) => setAmount(Number(e.target.value))}
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center">
-                        <select className="h-full py-0 pl-3 pr-8 border-transparent bg-transparent text-slate-800 sm:text-sm rounded-r-lg focus:ring-0 focus:border-transparent font-bold">
-                          <option>EUR</option>
-                          <option>USD</option>
-                          <option>GBP</option>
-                          <option>CHF</option>
+                        <select 
+                            value={currency}
+                            onChange={(e) => setCurrency(e.target.value)}
+                            className="h-full py-0 pl-3 pr-8 border-transparent bg-transparent text-slate-800 sm:text-sm rounded-r-lg focus:ring-0 focus:border-transparent font-bold"
+                        >
+                          <option value="EUR">EUR</option>
+                          <option value="USD">USD</option>
                         </select>
                       </div>
                     </div>
@@ -179,12 +220,14 @@ const AdminPage: React.FC = () => {
                 <div>
                   <label className="flex justify-between text-sm font-semibold text-slate-800 mb-2">
                     <span>Motif de conformité <span className="text-primary">*</span></span>
-                    <span className="text-xs text-slate-500 font-normal">Obligatoire pour l'audit</span>
+                    <span className="text-xs text-slate-500 font-normal">Sera visible sur le relevé bancaire</span>
                   </label>
                   <textarea 
                     className="block w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 placeholder-slate-400 resize-none" 
-                    placeholder="Veuillez détailler la justification réglementaire de cette injection (ex: Dividendes annuels, Correction d'erreur comptable...)" 
-                    rows={3}
+                    placeholder="Ex: Dividendes annuels, Prime de performance..." 
+                    rows={2}
+                    value={motif}
+                    onChange={(e) => setMotif(e.target.value)}
                   ></textarea>
                 </div>
 
@@ -199,9 +242,22 @@ const AdminPage: React.FC = () => {
                       <span className="material-symbols-outlined text-[16px]">phonelink_lock</span>
                       2FA REQUIS
                     </div>
-                    <button className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white px-8 py-3.5 rounded-lg font-bold shadow-lg shadow-primary/10 transition-all active:scale-95 flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined">bolt</span>
-                      Exécuter l'injection
+                    <button 
+                      onClick={handleInjection}
+                      disabled={isLoading || amount <= 0}
+                      className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white px-8 py-3.5 rounded-lg font-bold shadow-lg shadow-primary/10 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <>
+                            <span className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                            Traitement...
+                        </>
+                      ) : (
+                        <>
+                            <span className="material-symbols-outlined">bolt</span>
+                            Exécuter l'injection
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -223,47 +279,32 @@ const AdminPage: React.FC = () => {
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
                         <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">Horodatage</th>
-                        <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">ID Bénéficiaire</th>
+                        <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">Bénéficiaire</th>
                         <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">Montant</th>
                         <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">Motif</th>
-                        <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">Officier</th>
                         <th className="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap text-right">Statut</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       <tr className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">A l'instant</td>
+                        <td className="px-6 py-4 text-slate-800 font-medium">{user?.name || 'Client'}</td>
+                        <td className="px-6 py-4 text-slate-800 font-mono">En cours...</td>
+                        <td className="px-6 py-4 text-slate-500 max-w-[200px] truncate" title="Dernière opération">Dernière opération</td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 border border-slate-200">
+                            En traitement
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 text-slate-500 font-mono text-xs">24 Oct 14:32</td>
-                        <td className="px-6 py-4 text-slate-800 font-medium">USR-882910</td>
+                        <td className="px-6 py-4 text-slate-800 font-medium">Jean Dupont</td>
                         <td className="px-6 py-4 text-slate-800 font-mono">€ 12,500.00</td>
                         <td className="px-6 py-4 text-slate-500 max-w-[200px] truncate" title="Régularisation T3">Régularisation T3</td>
-                        <td className="px-6 py-4 text-slate-500">ADM-01</td>
                         <td className="px-6 py-4 text-right">
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-600 border border-emerald-100">
                             Succès
-                          </span>
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">24 Oct 11:15</td>
-                        <td className="px-6 py-4 text-slate-800 font-medium">USR-102293</td>
-                        <td className="px-6 py-4 text-slate-800 font-mono">$ 5,000.00</td>
-                        <td className="px-6 py-4 text-slate-500 max-w-[200px] truncate" title="Bonus Parrainage VIP">Bonus Parrainage VIP</td>
-                        <td className="px-6 py-4 text-slate-500">ADM-04</td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-600 border border-emerald-100">
-                            Succès
-                          </span>
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">23 Oct 09:42</td>
-                        <td className="px-6 py-4 text-slate-800 font-medium">USR-991002</td>
-                        <td className="px-6 py-4 text-slate-800 font-mono">£ 450.00</td>
-                        <td className="px-6 py-4 text-slate-500 max-w-[200px] truncate" title="Remboursement frais tech">Remboursement frais...</td>
-                        <td className="px-6 py-4 text-slate-500">ADM-01</td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-600 border border-amber-100">
-                            En attente
                           </span>
                         </td>
                       </tr>

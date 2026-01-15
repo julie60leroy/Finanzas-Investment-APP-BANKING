@@ -1,30 +1,34 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Types
+// --- TYPES ---
+export type Language = 'fr' | 'en';
+
 export interface Transaction {
   id: string;
-  date: string; // ISO String for dynamic calculation
+  date: string;
   name: string;
   icon: string;
-  cat: string; // Used for Motif/Category
+  cat: string;
   status: 'Complété' | 'En attente' | 'Échoué';
-  amt: number; // Numeric value for calculation
+  amt: number;
   currency: string;
-  beneficiaryDetails?: Beneficiary; // Optional: store full beneficiary details for receipt
+  beneficiaryDetails?: Beneficiary;
 }
 
 export interface User {
   name: string;
   email: string;
   avatar: string;
-  // Nouveaux champs pour le profil
   phone: string;
   address: string;
+  city: string;
+  zipCode: string;
+  country: string;
   jobTitle: string;
-  securityPin: string; // Code PIN à 4 chiffres (Strict)
-  checkingIban: string; // IBAN du compte courant modifiable
-  checkingAccountName: string; // Nom personnalisé du compte courant
-  overdraftLimit: number; // Découvert autorisé
+  securityPin: string;
+  checkingIban: string;
+  checkingAccountName: string;
+  overdraftLimit: number;
   accounts: {
     checking: number;
     savings: number;
@@ -62,9 +66,141 @@ export interface Notification {
   type: 'security' | 'transaction' | 'system';
   title: string;
   message: string;
-  date: string; // ISO string for sorting
+  date: string;
   read: boolean;
 }
+
+// --- DICTIONNAIRE DE TRADUCTION ---
+const translations = {
+  fr: {
+    nav: {
+      dashboard: "Tableau de bord",
+      transactions: "Transactions",
+      transfers: "Virements",
+      cards: "Cartes",
+      notifications: "Notifications",
+      settings: "Paramètres",
+      profile: "Mon Profil",
+      admin: "Administration",
+      logout: "Déconnexion"
+    },
+    dashboard: {
+      welcome: "Bonjour",
+      date_format: "fr-FR",
+      wealth_estimated: "Patrimoine Total Estimé",
+      analysis: "Voir l'analyse détaillée",
+      quick_transfer_title: "Virement Rapide",
+      send_money: "Envoyer",
+      add_beneficiary: "Ajouter",
+      quick_transfer_action: "Nouveau Virement",
+      quick_card: "Gérer ma Carte",
+      quick_rib: "Copier mon RIB",
+      quick_docs: "Relevés & Docs",
+      rib_copied: "IBAN Copié !",
+      expenses_breakdown: "Répartition des Dépenses",
+      total_out: "Total Sorties",
+      recent_moves: "Derniers Mouvements",
+      see_all: "Tout voir",
+      no_tx: "Aucune transaction récente"
+    },
+    notifications: {
+      title: "Centre de Notifications",
+      mark_all: "Tout marquer comme lu",
+      tabs: {
+        all: "Toutes",
+        alerts: "Alertes",
+        transactions: "Transactions"
+      },
+      sections: {
+        today: "Aujourd'hui",
+        earlier: "Plus tôt"
+      },
+      empty: "Aucune notification pour le moment.",
+      settings_title: "Paramètres",
+      channels: "Canaux de diffusion",
+      categories: "Catégories d'alertes",
+      save_settings: "Sauvegarder les réglages"
+    },
+    settings: {
+      title: "Paramètres",
+      subtitle: "Gérez vos préférences et votre sécurité.",
+      tabs: {
+        profile: "Profil",
+        security: "Sécurité",
+        notifications: "Notifications",
+        region: "Langues et Région"
+      },
+      region_section: {
+        lang_title: "Langue de l'interface",
+        currency_title: "Devise de référence"
+      }
+    }
+  },
+  en: {
+    nav: {
+      dashboard: "Dashboard",
+      transactions: "Transactions",
+      transfers: "Transfers",
+      cards: "Cards",
+      notifications: "Notifications",
+      settings: "Settings",
+      profile: "My Profile",
+      admin: "Admin Panel",
+      logout: "Logout"
+    },
+    dashboard: {
+      welcome: "Hello",
+      date_format: "en-US",
+      wealth_estimated: "Estimated Total Wealth",
+      analysis: "See detailed analysis",
+      quick_transfer_title: "Quick Transfer",
+      send_money: "Send",
+      add_beneficiary: "Add New",
+      quick_transfer_action: "New Transfer",
+      quick_card: "Manage Card",
+      quick_rib: "Copy IBAN",
+      quick_docs: "Statements & Docs",
+      rib_copied: "IBAN Copied!",
+      expenses_breakdown: "Expenses Breakdown",
+      total_out: "Total Out",
+      recent_moves: "Recent Movements",
+      see_all: "See all",
+      no_tx: "No recent transactions"
+    },
+    notifications: {
+      title: "Notification Center",
+      mark_all: "Mark all as read",
+      tabs: {
+        all: "All",
+        alerts: "Alerts",
+        transactions: "Transactions"
+      },
+      sections: {
+        today: "Today",
+        earlier: "Earlier"
+      },
+      empty: "No notifications yet.",
+      settings_title: "Settings",
+      channels: "Notification Channels",
+      categories: "Alert Categories",
+      save_settings: "Save settings"
+    },
+    settings: {
+      title: "Settings",
+      subtitle: "Manage your preferences and security.",
+      tabs: {
+        profile: "Profile",
+        security: "Security",
+        notifications: "Notifications",
+        region: "Language & Region"
+      },
+      region_section: {
+        lang_title: "Interface Language",
+        currency_title: "Reference Currency"
+      }
+    }
+  }
+};
 
 interface AppContextType {
   user: User | null;
@@ -73,48 +209,57 @@ interface AppContextType {
   cards: Card[];
   notifications: Notification[];
   isAuthenticated: boolean;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
   login: (email: string) => void;
   logout: () => void;
   performTransfer: (amount: number, recipientName: string, motif: string, beneficiaryDetails?: Beneficiary) => void;
   addBeneficiary: (beneficiary: Omit<Beneficiary, 'id'>) => void;
   updateUser: (data: Partial<User>) => void;
-  // Card Actions
   addCard: (type: 'physical' | 'virtual', design: 'premium-red' | 'midnight-black') => void;
   toggleCardStatus: (id: string) => void;
   updateCardLimits: (id: string, newLimits: Card['limits']) => void;
-  // Notification Actions
   markAllNotificationsAsRead: () => void;
-  // Utils
   formatTxDate: (isoString: string) => string;
+  addNotification: (type: Notification['type'], title: string, message: string) => void;
+  injectFunds: (amount: number, currency: string, motif?: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // --- UTILS ---
-// Fonction pour le temps relatif
-const formatTxDate = (isoString: string) => {
+const formatTxDate = (isoString: string, lang: string = 'fr-FR') => {
   const date = new Date(isoString);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return "À l'instant";
-  if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
-  if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
-  if (diffInSeconds < 172800) return "Hier";
+  const timeAgo = {
+    fr: { instant: "À l'instant", min: "Il y a {x} min", hour: "Il y a {x} h", yesterday: "Hier" },
+    en: { instant: "Just now", min: "{x} min ago", hour: "{x} h ago", yesterday: "Yesterday" }
+  };
+  const l = (timeAgo as any)[lang.split('-')[0]] || timeAgo.fr;
+
+  if (diffInSeconds < 60) return l.instant;
+  if (diffInSeconds < 3600) return l.min.replace('{x}', Math.floor(diffInSeconds / 60));
+  if (diffInSeconds < 86400) return l.hour.replace('{x}', Math.floor(diffInSeconds / 3600));
+  if (diffInSeconds < 172800) return l.yesterday;
   
-  // Sinon date standard
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(lang, { day: 'numeric', month: 'short' });
 };
 
-// Mock Initial Data
+// Initial Data
 const INITIAL_USER: User = {
   name: "Jean Dupont",
   email: "jean.dupont@finanzas.com",
   avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBVlfU9LT1bKOu6YiRJpGLlYM55G-ROq-Imcg0n3XaiPz4Iy8P0pdTm5EyTVq2q_KvY4VmF8wY8R_AmHux0K5GK8c-otO4U9RIjF6TrgtAREMs_IOy6l3zZTlPjAdvDPs4fEHnhG8BryjrP3x0xqqLOYgPVENwGW31j510yl19aLhKoSBSGfp5aZuZxHpxmk7w-Gooz3SRg_KEuZzIcqZrlO9xvqN5vm5kBZNPnox4vUcYIM-5BGb5N2taHq1n25De6od-5WYssKEg",
   phone: "+33 6 12 34 56 78",
-  address: "14 Avenue des Champs-Élysées, 75008 Paris, France",
+  address: "14 Avenue des Champs-Élysées",
+  city: "Paris",
+  zipCode: "75008",
+  country: "France",
   jobTitle: "Cadre Supérieur",
-  securityPin: "0000", // Default PIN set to 4 digits
+  securityPin: "0000", 
   checkingIban: "FR76 3000 6000 0123 4567 8901 234",
   checkingAccountName: "Compte Courant",
   overdraftLimit: 500,
@@ -124,79 +269,10 @@ const INITIAL_USER: User = {
   }
 };
 
-// Génération de transactions réalistes (50 items)
-const generateTransactions = (): Transaction[] => {
-  const now = new Date();
-  const txs: Transaction[] = [];
-  
-  // 1. Très récentes
-  txs.push({ id: 't1', date: new Date(now.getTime() - 1000 * 30).toISOString(), name: "Apple Store", icon: "laptop_mac", cat: "Électronique", status: "Complété", amt: -1299.00, currency: '€' });
-  txs.push({ id: 't2', date: new Date(now.getTime() - 1000 * 60 * 45).toISOString(), name: "Uber Eats", icon: "restaurant", cat: "Restauration", status: "En attente", amt: -25.50, currency: '€' });
-  txs.push({ id: 't3', date: new Date(now.getTime() - 1000 * 60 * 60 * 3).toISOString(), name: "Carrefour City", icon: "shopping_cart", cat: "Alimentation", status: "Complété", amt: -42.15, currency: '€' });
-
-  // 2. Hier
-  txs.push({ id: 't4', date: new Date(now.getTime() - 1000 * 60 * 60 * 25).toISOString(), name: "Virement Salaire", icon: "payments", cat: "Revenu", status: "Complété", amt: 3500.00, currency: '€' });
-
-  // 3. Passées (Génération de masse)
-  const icons = ["restaurant", "shopping_bag", "local_gas_station", "movie", "fitness_center", "train", "flight"];
-  const names = ["Starbucks", "Zara", "Total Energies", "Cinema UGC", "Basic Fit", "SNCF", "Air France", "Amazon Prime", "Netflix", "Spotify"];
-  const cats = ["Loisirs", "Shopping", "Transport", "Abonnement", "Santé"];
-
-  for (let i = 0; i < 45; i++) {
-    const timeOffset = 1000 * 60 * 60 * 24 * (i + 2); // Jours précédents
-    const randomName = names[Math.floor(Math.random() * names.length)];
-    const randomIcon = icons[Math.floor(Math.random() * icons.length)];
-    const randomAmt = -(Math.random() * 100 + 5).toFixed(2);
-    
-    txs.push({
-      id: `old_${i}`,
-      date: new Date(now.getTime() - timeOffset).toISOString(),
-      name: randomName,
-      icon: randomIcon,
-      cat: cats[Math.floor(Math.random() * cats.length)],
-      status: "Complété",
-      amt: Number(randomAmt),
-      currency: '€'
-    });
-  }
-  
-  return txs;
-};
-
-const INITIAL_TRANSACTIONS = generateTransactions();
-
 const INITIAL_BENEFICIARIES: Beneficiary[] = [
-  { 
-    id: '1',
-    name: "Jean Dupont", 
-    iban: "FR76 •••• •••• 1234", 
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg",
-    favorite: false,
-    bankName: "BNP Paribas"
-  },
-  { 
-    id: '2',
-    name: "Marie Lefebvre", 
-    iban: "BE93 •••• •••• 8821", 
-    favorite: true,
-    bankName: "KBC Brussels"
-  },
-  { 
-    id: '3',
-    name: "Thomas Muller", 
-    iban: "DE42 •••• •••• 5678", 
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCyEK5dwziE9aWcUTJas99Q_e0VxQb6tnUMc01v3dSMnl9mv7L8zb6QJExhH-z_KNag1EqDOI8wrTHCIRb4YBtZzNf-H_RJiT6PKs8EQrGA7tA916Jj6V1_eiSuvlJKzF9wplGiaHl-gwswDLUrEYaU9lbJxiTmr-7pxfETzSSQkNC8xWOTFRqlyld9rVpeWJBAnpnTAHLv0cOdjvghr7LACVdAmeD7zG909zCCpKdcprvBb1_m_ENtld54D-iltQLQj75q26tGtBg",
-    favorite: false,
-    bankName: "Deutsche Bank"
-  },
-  { 
-    id: '4',
-    name: "Sarah Williams", 
-    iban: "GB12 •••• •••• 9900", 
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGg7_Lh0wYSya4uECacFBdzku7QnQLMBXnA4ikqVPrGk-vgW39rzABKZU3bkoFEaWVQ95T8aKYoebyA6RAqs5e6Eludgofy0ZtAIRTVXVUo3FOSCgTjrXBAoImKhekiDzr3BW3uQJY1iEq2DDTnmHGQMmYZe14JwLQqCHclXlcmgiT7Kyrfau6p99eLK-roxK8TVFH3IDKu4w801ty99qsrGe9e5PHmR8xYcQ39o2-QmKXod-i5NsxSFSofs_XQ73GLdxU8emEdeQ",
-    favorite: false,
-    bankName: "Barclays"
-  }
+    { id: 'b1', name: 'Alice Martin', iban: 'FR76 1234 5678 9012', favorite: true, img: 'https://i.pravatar.cc/150?u=alice' },
+    { id: 'b2', name: 'Thomas Bernard', iban: 'FR76 9876 5432 1098', favorite: true, img: 'https://i.pravatar.cc/150?u=thomas' },
+    { id: 'b3', name: 'Sophie Dubreuil', iban: 'FR76 5678 9012 3456', favorite: false, img: 'https://i.pravatar.cc/150?u=sophie' }
 ];
 
 const INITIAL_CARDS: Card[] = [
@@ -204,54 +280,72 @@ const INITIAL_CARDS: Card[] = [
     id: 'c1',
     type: 'physical',
     network: 'mastercard',
-    number: '5324892145823021',
+    number: '5300 1234 5678 4242',
     holder: 'JEAN DUPONT',
-    expiry: '09/27',
+    expiry: '09/28',
     cvc: '123',
     pin: '1234',
     status: 'active',
     design: 'premium-red',
-    limits: {
-      payment: { current: 2450, max: 5000 },
-      withdrawal: { current: 400, max: 1000 }
-    }
+    limits: { payment: { current: 450, max: 2000 }, withdrawal: { current: 120, max: 500 } }
   },
   {
     id: 'c2',
     type: 'virtual',
     network: 'visa',
-    number: '4929304910239103',
+    number: '4970 9876 5432 1098',
     holder: 'JEAN DUPONT',
-    expiry: '12/25',
-    cvc: '987',
+    expiry: '12/29',
+    cvc: '456',
     pin: '0000',
     status: 'active',
     design: 'midnight-black',
-    limits: {
-      payment: { current: 150, max: 1000 },
-      withdrawal: { current: 0, max: 0 }
-    }
+    limits: { payment: { current: 129, max: 1000 }, withdrawal: { current: 0, max: 0 } }
   }
 ];
 
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'n1',
-    type: 'security',
-    title: 'Alerte Sécurité : Nouvelle Connexion',
-    message: "Un nouvel appareil s'est connecté à votre compte depuis Paris, France.",
-    date: new Date().toISOString(),
-    read: false
-  },
-  {
-    id: 'n2',
-    type: 'transaction',
-    title: 'Virement Reçu',
-    message: 'Votre compte a été crédité de 1,250.00 € par SARL TechInvest.',
-    date: new Date(Date.now() - 3600000).toISOString(),
-    read: true
-  }
-];
+const generateTransactions = (): Transaction[] => {
+  const now = new Date();
+  const txs: Transaction[] = [];
+  txs.push({ id: 't1', date: new Date(now.getTime() - 1000 * 30).toISOString(), name: "Apple Store", icon: "laptop_mac", cat: "Électronique", status: "Complété", amt: -1299.00, currency: '€' });
+  txs.push({ id: 't2', date: new Date(now.getTime() - 1000 * 60 * 45).toISOString(), name: "Uber Eats", icon: "restaurant", cat: "Restauration", status: "En attente", amt: -25.50, currency: '€' });
+  txs.push({ id: 't3', date: new Date(now.getTime() - 1000 * 60 * 60 * 3).toISOString(), name: "Carrefour City", icon: "shopping_cart", cat: "Alimentation", status: "Complété", amt: -42.15, currency: '€' });
+  return txs;
+};
+const _REAL_INITIAL_TRANSACTIONS = generateTransactions();
+
+// --- RESTAURATION DES NOTIFICATIONS (SCÉNARIO) ---
+const generateNotifications = (): Notification[] => {
+    const now = new Date();
+    return [
+        {
+            id: 'n1',
+            type: 'security',
+            title: 'Nouvelle connexion détectée',
+            message: 'Un appareil "iPhone 15 Pro" s\'est connecté depuis Lyon, France.',
+            date: new Date(now.getTime() - 1000 * 60 * 10).toISOString(), // Il y a 10 min
+            read: false
+        },
+        {
+            id: 'n2',
+            type: 'transaction',
+            title: 'Virement reçu',
+            message: 'Vous avez reçu un virement instantané de 450,00 € de la part de Thomas Bernard.',
+            date: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(), // Il y a 2h
+            read: false
+        },
+        {
+            id: 'n3',
+            type: 'system',
+            title: 'Mise à jour des CGU',
+            message: 'Nos conditions générales d\'utilisation ont été mises à jour. Veuillez les consulter.',
+            date: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(), // Hier
+            read: true
+        }
+    ];
+};
+const INITIAL_NOTIFICATIONS = generateNotifications();
+
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -260,37 +354,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cards, setCards] = useState<Card[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [language, setLanguage] = useState<Language>('fr');
 
-  // Initialize
+  // --- FONCTION DE TRADUCTION ---
+  const t = (path: string): string => {
+    const keys = path.split('.');
+    let current: any = translations[language];
+    for (const k of keys) {
+      if (current[k] === undefined) return path;
+      current = current[k];
+    }
+    return current;
+  };
+
   useEffect(() => {
     const storedAuth = localStorage.getItem('isAuth');
     if (storedAuth === 'true') {
       setIsAuthenticated(true);
       setUser(INITIAL_USER);
-      setTransactions(INITIAL_TRANSACTIONS);
+      setTransactions(_REAL_INITIAL_TRANSACTIONS);
       setBeneficiaries(INITIAL_BENEFICIARIES);
-      setCards(INITIAL_CARDS);
+      setCards(INITIAL_CARDS); 
       setNotifications(INITIAL_NOTIFICATIONS);
     }
   }, []);
 
-  // Helper to push notification
-  const pushNotification = (type: Notification['type'], title: string, message: string) => {
-    const newNotif: Notification = {
-        id: `n${Date.now()}`,
-        type,
-        title,
-        message,
-        date: new Date().toISOString(),
-        read: false
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-  };
-
   const login = (email: string) => {
     setIsAuthenticated(true);
     setUser({ ...INITIAL_USER, email });
-    setTransactions(INITIAL_TRANSACTIONS);
+    setTransactions(_REAL_INITIAL_TRANSACTIONS);
     setBeneficiaries(INITIAL_BENEFICIARIES);
     setCards(INITIAL_CARDS);
     setNotifications(INITIAL_NOTIFICATIONS);
@@ -303,117 +395,154 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('isAuth');
   };
 
-  const performTransfer = (amount: number, recipientName: string, motif: string = "Virement", beneficiaryDetails?: Beneficiary) => {
-    if (!user) return;
-    
-    if (user.accounts.checking < amount) {
-        console.error("Tentative de virement sans solde suffisant.");
-        pushNotification('system', 'Échec Virement', `Le virement de ${amount}€ vers ${recipientName} a échoué : Solde insuffisant.`);
-        return; 
-    }
-
-    const newChecking = user.accounts.checking - amount;
-    setUser({
-      ...user,
-      accounts: { ...user.accounts, checking: newChecking }
-    });
-
-    const newTx: Transaction = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(), // Use Current ISO Time
-      name: `${recipientName}`,
-      icon: "send",
-      cat: motif,
-      status: "Complété",
-      amt: -amount,
-      currency: '€',
-      beneficiaryDetails: beneficiaryDetails // Save full details
+  // --- HELPER DE NOTIFICATION ---
+  const addNotification = (type: Notification['type'], title: string, message: string) => {
+    const newNotif: Notification = {
+        id: `notif-${Date.now()}`,
+        type,
+        title,
+        message,
+        date: new Date().toISOString(),
+        read: false
     };
-
-    setTransactions([newTx, ...transactions]);
-    pushNotification('transaction', 'Virement Effectué', `Vous avez envoyé ${amount}€ à ${recipientName}.`);
+    setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const addBeneficiary = (data: Omit<Beneficiary, 'id'>) => {
-    const newBeneficiary: Beneficiary = {
-      id: Date.now().toString(),
-      ...data
-    };
-    setBeneficiaries([newBeneficiary, ...beneficiaries]);
-    pushNotification('system', 'Bénéficiaire Ajouté', `${data.name} a été ajouté à votre liste de bénéficiaires.`);
-  };
-
-  const updateUser = (data: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...data });
-      // Notification moins intrusive pour les petites modifications
-      if (data.securityPin || data.email || data.checkingIban) {
-         pushNotification('security', 'Sécurité', 'Vos informations sensibles ont été mises à jour.');
+  const performTransfer = (amount: number, recipientName: string, motif: string, beneficiaryDetails?: Beneficiary) => {
+      // Simuler le transfert
+      const newTx: Transaction = {
+          id: `tx-${Date.now()}`,
+          date: new Date().toISOString(),
+          name: recipientName,
+          icon: 'send',
+          cat: motif || 'Virement',
+          status: 'Complété',
+          amt: -amount,
+          currency: '€',
+          beneficiaryDetails
+      };
+      setTransactions([newTx, ...transactions]);
+      if (user) {
+          setUser({
+              ...user,
+              accounts: {
+                  ...user.accounts,
+                  checking: user.accounts.checking - amount
+              }
+          });
       }
-    }
+      // Notification
+      addNotification('transaction', 'Virement envoyé', `Votre virement de ${amount}€ vers ${recipientName} a été effectué.`);
   };
 
-  // --- CARD ACTIONS ---
+  const addBeneficiary = (beneficiary: Omit<Beneficiary, 'id'>) => {
+      const newB = { ...beneficiary, id: `b-${Date.now()}` };
+      setBeneficiaries([...beneficiaries, newB]);
+      // Notification
+      addNotification('security', 'Nouveau bénéficiaire', `Le bénéficiaire ${beneficiary.name} a été ajouté à votre liste de confiance.`);
+  };
 
+  const updateUser = (data: Partial<User>) => { 
+      if(user) {
+          setUser({...user, ...data}); 
+          // Logique de notification selon le champ modifié
+          if (data.securityPin) {
+              addNotification('security', 'Sécurité mise à jour', 'Votre code secret pour les virements a été modifié.');
+          }
+          else if (data.email || data.phone || data.address) {
+               addNotification('system', 'Profil mis à jour', 'Vos coordonnées personnelles ont été modifiées.');
+          }
+          else if (data.checkingIban || data.checkingAccountName) {
+               addNotification('system', 'Compte modifié', 'Les détails de votre compte courant ont été mis à jour.');
+          }
+          else if (data.overdraftLimit) {
+               addNotification('system', 'Découvert autorisé', `Votre plafond de découvert est maintenant de ${data.overdraftLimit}€.`);
+          }
+      }
+  };
+  
   const addCard = (type: 'physical' | 'virtual', design: 'premium-red' | 'midnight-black') => {
-    const genPart = () => Math.floor(1000 + Math.random() * 9000).toString();
-    const fullNumber = `${genPart()}${genPart()}${genPart()}${genPart()}`;
-    
-    const newCard: Card = {
-      id: `c${Date.now()}`,
-      type,
-      network: Math.random() > 0.5 ? 'visa' : 'mastercard',
-      number: fullNumber,
-      holder: user ? user.name.toUpperCase() : 'UTILISATEUR',
-      expiry: '12/28',
-      cvc: Math.floor(100 + Math.random() * 900).toString(),
-      pin: Math.floor(1000 + Math.random() * 9000).toString(),
-      status: 'active',
-      design,
-      limits: {
-        payment: { current: 0, max: type === 'physical' ? 5000 : 1000 },
-        withdrawal: { current: 0, max: type === 'physical' ? 1000 : 0 }
-      }
-    };
-    setCards([...cards, newCard]);
-    pushNotification('system', 'Nouvelle Carte', `Votre carte ${type === 'physical' ? 'physique' : 'virtuelle'} a été créée avec succès.`);
+      const newCard: Card = {
+          id: `c-${Date.now()}`,
+          type,
+          network: 'mastercard',
+          number: `5300${Math.floor(1000 + Math.random() * 9000)}${Math.floor(1000 + Math.random() * 9000)}4242`,
+          holder: user?.name || 'USER',
+          expiry: '09/28',
+          cvc: '123',
+          pin: '0000',
+          status: 'active',
+          design,
+          limits: { payment: { current: 0, max: 2000 }, withdrawal: { current: 0, max: 500 } }
+      };
+      setCards([...cards, newCard]);
+      addNotification('system', 'Nouvelle carte', `Votre carte ${type === 'physical' ? 'Physique' : 'Virtuelle'} a été créée avec succès.`);
   };
-
+  
   const toggleCardStatus = (id: string) => {
-    let newStatus = '';
-    setCards(cards.map(card => {
-        if (card.id === id) {
-            newStatus = card.status === 'active' ? 'blocked' : 'active';
-            return { ...card, status: card.status === 'active' ? 'blocked' : 'active' };
-        }
-        return card;
-    }));
-    
-    // Find card for notif detail
-    const card = cards.find(c => c.id === id);
-    if (card) {
-        const action = card.status === 'active' ? 'bloquée' : 'débloquée';
-        pushNotification('security', 'Statut Carte Modifié', `Votre carte terminant par ${card.number.slice(-4)} a été ${action}.`);
-    }
+      let newStatus = '';
+      setCards(cards.map(c => {
+          if (c.id === id) {
+              newStatus = c.status === 'active' ? 'bloquée' : 'débloquée';
+              return { ...c, status: c.status === 'active' ? 'blocked' : 'active' };
+          }
+          return c;
+      }));
+      if (newStatus) {
+        addNotification('security', 'Statut Carte', `Votre carte a été ${newStatus} temporairement.`);
+      }
   };
-
+  
   const updateCardLimits = (id: string, newLimits: Card['limits']) => {
-    setCards(cards.map(card => 
-      card.id === id ? { ...card, limits: newLimits } : card
-    ));
-    pushNotification('system', 'Plafonds Mis à jour', 'Les limites de votre carte ont été modifiées.');
+      setCards(cards.map(c => c.id === id ? { ...c, limits: newLimits } : c));
+      addNotification('security', 'Plafonds mis à jour', 'Les limites de paiement/retrait de votre carte ont été modifiées.');
+  };
+  
+  const markAllNotificationsAsRead = () => {
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
   };
 
-  const markAllNotificationsAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  // Fonction Admin pour injecter des fonds
+  const injectFunds = (amount: number, currency: string, motif: string = "Injection Capital") => {
+      if (user) {
+           setUser({
+              ...user,
+              accounts: {
+                  ...user.accounts,
+                  checking: user.accounts.checking + amount
+              }
+          });
+          const newTx: Transaction = {
+            id: `tx-inj-${Date.now()}`,
+            date: new Date().toISOString(),
+            name: "Trésorerie Centrale", // Nom affiché sur le relevé
+            icon: "account_balance",
+            cat: motif, // Utilisation du motif personnalisé (ex: Dividendes)
+            status: "Complété",
+            amt: amount,
+            currency: currency === 'USD' ? '$' : '€', 
+            beneficiaryDetails: {
+                id: 'admin-treasury',
+                name: 'Finanzas Trésorerie',
+                iban: 'FI76 9999 9999 9999 9999',
+                favorite: false,
+                bankName: 'Finanzas Central Bank - Administration'
+            }
+          };
+          setTransactions([newTx, ...transactions]);
+          // La notification reprend le motif pour être claire
+          addNotification('transaction', 'Fonds reçus', `Injection de capital de ${amount} ${currency === 'USD' ? '$' : '€'} reçue. Motif : ${motif}`);
+      }
   };
 
   return (
     <AppContext.Provider value={{ 
       user, transactions, beneficiaries, cards, notifications, isAuthenticated, 
+      language, setLanguage, t,
       login, logout, performTransfer, addBeneficiary, updateUser,
       addCard, toggleCardStatus, updateCardLimits, markAllNotificationsAsRead,
-      formatTxDate
+      formatTxDate: (d) => formatTxDate(d, language),
+      addNotification, injectFunds
     }}>
       {children}
     </AppContext.Provider>

@@ -5,7 +5,10 @@ import { useApp, Transaction } from '../context/AppContext';
 const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const { transactions, formatTxDate } = useApp();
+  const { transactions, formatTxDate, language } = useApp();
+
+  const formatCurrency = (amount: number) => 
+    new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
 
   return (
     <>
@@ -83,7 +86,7 @@ const TransactionsPage: React.FC = () => {
                         tx.amt > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'
                         }`}
                     >
-                        {tx.amt > 0 ? '+' : ''} {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(tx.amt)}
+                        {tx.amt > 0 ? '+' : ''} {formatCurrency(tx.amt)}
                     </td>
                     </tr>
                 ))}
@@ -113,7 +116,7 @@ const TransactionsPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1 text-center">{selectedTx.name}</h2>
               <p className="text-slate-500 text-sm mb-4">{formatTxDate(selectedTx.date)}</p>
               <div className="text-4xl font-black text-slate-900 dark:text-white mb-8 text-center">
-                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(selectedTx.amt)}
+                {formatCurrency(selectedTx.amt)}
               </div>
               <div className="w-full space-y-6 border-t border-slate-100 dark:border-slate-800 pt-6">
                 <div className="flex justify-between text-sm">
