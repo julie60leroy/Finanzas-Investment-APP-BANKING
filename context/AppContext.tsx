@@ -142,6 +142,7 @@ interface AppContextType {
   formatTxDate: (isoString: string) => string;
   addNotification: (type: Notification['type'], title: string, message: string, translationKey?: string, translationParams?: Record<string, string | number>) => void;
   injectFunds: (amount: number, currency: string, motif?: string) => void;
+  resetAccount: () => void;
   
   // Nouveaux Helpers
   formatGlobalMoney: (amountInEur: number) => string;
@@ -577,6 +578,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
   };
 
+  const resetAccount = () => {
+      setUser(getInitialUser(t));
+      setTransactions(getInitialTransactions(t));
+      setCards(INITIAL_CARDS);
+      setNotifications(getInitialNotifications(language));
+      addNotification('system', t('admin.reset_title'), t('admin.reset_toast'), 'reset_done', {});
+  };
+
   return (
     <AppContext.Provider value={{ 
       user, transactions, beneficiaries, cards, notifications, isAuthenticated, 
@@ -584,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       login, logout, performTransfer, addBeneficiary, updateUser,
       addCard, toggleCardStatus, updateCardLimits, markAllNotificationsAsRead,
       formatTxDate: (d) => formatTxDate(d, language),
-      addNotification, injectFunds,
+      addNotification, injectFunds, resetAccount,
       currency, setCurrency, formatGlobalMoney, convertAmount
     }}>
       {children}

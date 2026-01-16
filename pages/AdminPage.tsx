@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 const AdminPage: React.FC = () => {
   const navigate = useNavigate();
-  const { injectFunds, user, t, formatTxDate, language, currency: globalCurrency } = useApp();
+  const { injectFunds, user, t, formatTxDate, language, currency: globalCurrency, resetAccount } = useApp();
   
   // Utilisation d'un effet pour mettre à jour le motif par défaut lors du changement de langue
   const [motif, setMotif] = useState("");
@@ -33,6 +33,13 @@ const AdminPage: React.FC = () => {
         setAmount(0);
         setTimeout(() => setShowSuccess(false), 3000);
     }, 1000);
+  };
+
+  const handleReset = () => {
+      if (window.confirm("Êtes-vous sûr de vouloir réinitialiser l'application ? Toutes les données seront remises à zéro.")) {
+          resetAccount();
+          navigate('/');
+      }
   };
 
   return (
@@ -104,14 +111,6 @@ const AdminPage: React.FC = () => {
           <a href="#" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium">
             <span className="material-symbols-outlined text-[20px] fill-1">move_down</span>
             <span className="text-sm">{t('admin.injection_portal')}</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors group">
-            <span className="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">history_edu</span>
-            <span className="text-sm font-medium">{t('admin.audit')}</span>
-          </a>
-          <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors group">
-            <span className="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">policy</span>
-            <span className="text-sm font-medium">{t('admin.compliance')}</span>
           </a>
         </nav>
         
@@ -321,6 +320,26 @@ const AdminPage: React.FC = () => {
                             <p className="text-xs leading-relaxed opacity-80">
                                 Toutes les opérations effectuées sur ce portail sont enregistrées et auditables. Assurez-vous d'avoir les autorisations nécessaires avant de procéder à une injection de fonds.
                             </p>
+                        </div>
+                    </div>
+                 </div>
+
+                 {/* Zone de Danger (Reset) */}
+                 <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-red-900">
+                    <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-red-500">warning</span>
+                        <div className="flex-1">
+                            <p className="font-bold text-sm mb-1">{t('admin.danger_zone')}</p>
+                            <p className="text-xs leading-relaxed opacity-80 mb-3">
+                                {t('admin.reset_desc')}
+                            </p>
+                            <button 
+                                onClick={handleReset}
+                                className="w-full flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-xs py-2 rounded-lg transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-sm">restart_alt</span>
+                                {t('admin.reset_data')}
+                            </button>
                         </div>
                     </div>
                  </div>
