@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 
 const AccountDetailsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, transactions, updateUser, formatTxDate } = useApp();
+  const { user, transactions, updateUser, formatTxDate, t, formatGlobalMoney, convertAmount } = useApp();
   
   // États locaux
   const [copied, setCopied] = useState(false);
@@ -22,18 +22,14 @@ const AccountDetailsPage: React.FC = () => {
   
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Formatage montant
-  const formatMoney = (val: number) => 
-    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
-
   // Helper pour afficher le message toast
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Mock Graph Data (30 jours)
-  const data = [
+  // Mock Graph Data (30 jours) - Conversion dynamique
+  const rawData = [
     { name: '1 Oct', solde: 2100 },
     { name: '5 Oct', solde: 3200 }, // Salaire
     { name: '10 Oct', solde: 2800 },
@@ -42,9 +38,14 @@ const AccountDetailsPage: React.FC = () => {
     { name: '25 Oct', solde: 2450 }, // Actuel
   ];
 
+  const data = rawData.map(d => ({
+      ...d,
+      solde: Math.round(convertAmount(d.solde))
+  }));
+
   // Données dynamiques depuis le contexte
   const currentIban = user?.checkingIban || "FR76 3000 6000 0123 4567 8901 234";
-  const accountName = user?.checkingAccountName || "Compte Courant";
+  const accountName = user?.checkingAccountName || t('dashboard.accounts.checking');
   const overdraftLimit = user?.overdraftLimit || 500;
   
   // Affichage masqué ou clair
@@ -56,7 +57,7 @@ const AccountDetailsPage: React.FC = () => {
   const handleCopyIban = () => {
     navigator.clipboard.writeText(currentIban);
     setCopied(true);
-    showToast("RIB copié dans le presse-papier");
+    showToast(t('dashboard.rib_copied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -71,7 +72,7 @@ const AccountDetailsPage: React.FC = () => {
       e.preventDefault();
       updateUser({ checkingIban: newIbanInput });
       setShowEditIbanModal(false);
-      showToast("Le RIB a été modifié avec succès");
+      showToast(t('common.success'));
   };
 
   const handleOpenRename = () => {
@@ -84,7 +85,7 @@ const AccountDetailsPage: React.FC = () => {
       e.preventDefault();
       updateUser({ checkingAccountName: newNameInput });
       setShowRenameModal(false);
-      showToast("Compte renommé avec succès");
+      showToast(t('common.success'));
   };
 
   const handleOpenOverdraft = () => {
@@ -97,7 +98,7 @@ const AccountDetailsPage: React.FC = () => {
       e.preventDefault();
       updateUser({ overdraftLimit: newOverdraftInput });
       setShowOverdraftModal(false);
-      showToast("Plafond de découvert mis à jour");
+      showToast(t('common.success'));
   };
 
   return (
@@ -139,7 +140,7 @@ const AccountDetailsPage: React.FC = () => {
             className="text-primary font-bold text-sm hover:underline flex items-center gap-1"
         >
             <span className="material-symbols-outlined text-[18px]">tune</span>
-            Paramètres
+            {t('nav.settings')}
         </button>
       </header>
 
@@ -151,9 +152,9 @@ const AccountDetailsPage: React.FC = () => {
                 {/* Big Balance Card */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                     <div className="relative z-10">
-                        <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-2">Solde Disponible</p>
+                        <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-2">{t('account.balance_avail')}</p>
                         <h2 className="text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-6">
-                            {formatMoney(user?.accounts.checking || 0)}
+                            {formatGlobalMoney(user?.accounts.checking || 0)}
                         </h2>
                         
                         <div className="flex flex-wrap gap-3">
@@ -162,7 +163,7 @@ const AccountDetailsPage: React.FC = () => {
                                 className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 active:scale-95"
                             >
                                 <span className="material-symbols-outlined text-[20px]">send</span>
-                                Virement
+                                {t('nav.transfers')}
                             </button>
                             <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                                 <button 
@@ -170,7 +171,7 @@ const AccountDetailsPage: React.FC = () => {
                                     className={`flex items-center gap-2 px-4 py-2.5 font-bold transition-colors ${copied ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'} rounded-l-xl`}
                                 >
                                     <span className="material-symbols-outlined text-[20px]">{copied ? 'check' : 'content_copy'}</span>
-                                    {copied ? 'Copié' : 'Copier RIB'}
+                                    {copied ? t('account.copied') : t('account.copy_rib')}
                                 </button>
                                 <div className="w-px h-6 bg-slate-300 dark:bg-slate-600"></div>
                                 <button 
@@ -184,7 +185,7 @@ const AccountDetailsPage: React.FC = () => {
                                 <button 
                                     onClick={handleOpenEditIban}
                                     className="px-3 py-2.5 text-slate-500 hover:text-primary transition-colors rounded-r-xl"
-                                    title="Modifier le RIB"
+                                    title={t('account.edit_rib')}
                                 >
                                     <span className="material-symbols-outlined text-[20px]">edit</span>
                                 </button>
@@ -202,7 +203,7 @@ const AccountDetailsPage: React.FC = () => {
                 {/* Graph */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-bold text-slate-900 dark:text-white">Évolution (30 jours)</h3>
+                        <h3 className="font-bold text-slate-900 dark:text-white">{t('account.graph_evolution')}</h3>
                         <div className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg">
                             <span className="material-symbols-outlined text-[14px]">trending_up</span>
                             +12.5%
@@ -229,11 +230,11 @@ const AccountDetailsPage: React.FC = () => {
                                     axisLine={false} 
                                     tickLine={false} 
                                     tick={{fontSize: 12, fill: '#94a3b8'}} 
-                                    tickFormatter={(val) => `${val}€`}
+                                    tickFormatter={(val) => `${val}`}
                                 />
                                 <Tooltip 
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                                    formatter={(value: number) => [`${value} €`, 'Solde']}
+                                    formatter={(value: number) => [formatGlobalMoney(value), 'Solde']}
                                 />
                                 <Area 
                                     type="monotone" 
@@ -257,15 +258,15 @@ const AccountDetailsPage: React.FC = () => {
                         <div className="size-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 mb-3">
                             <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
                         </div>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase mb-1">Entrées (Mois)</p>
-                        <p className="text-xl font-black text-emerald-800 dark:text-emerald-300">+ 3,450 €</p>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase mb-1">{t('account.income_month')}</p>
+                        <p className="text-xl font-black text-emerald-800 dark:text-emerald-300">+ {formatGlobalMoney(3450)}</p>
                     </div>
                     <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-2xl border border-red-100 dark:border-red-900/20">
                         <div className="size-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 mb-3">
                             <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
                         </div>
-                        <p className="text-xs text-red-700 dark:text-red-400 font-bold uppercase mb-1">Sorties (Mois)</p>
-                        <p className="text-xl font-black text-red-800 dark:text-red-300">- 1,240 €</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 font-bold uppercase mb-1">{t('account.outcome_month')}</p>
+                        <p className="text-xl font-black text-red-800 dark:text-red-300">- {formatGlobalMoney(1240)}</p>
                     </div>
                 </div>
 
@@ -273,8 +274,8 @@ const AccountDetailsPage: React.FC = () => {
                 <div className="bg-slate-900 text-white p-6 rounded-3xl relative overflow-hidden group cursor-pointer" onClick={() => navigate('/cards')}>
                     <div className="relative z-10">
                         <div className="flex justify-between items-start mb-6">
-                            <span className="text-xs font-bold uppercase tracking-widest opacity-70">Carte Liée</span>
-                            <span className="bg-white/20 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold">ACTIVE</span>
+                            <span className="text-xs font-bold uppercase tracking-widest opacity-70">{t('account.linked_card')}</span>
+                            <span className="bg-white/20 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold">{t('cards.active').toUpperCase()}</span>
                         </div>
                         <p className="font-mono text-xl tracking-widest mb-4">•••• 4242</p>
                         <div className="flex justify-between items-end">
@@ -289,20 +290,20 @@ const AccountDetailsPage: React.FC = () => {
                 {/* Info Block */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">Informations</h4>
-                        <button onClick={handleOpenOverdraft} className="text-primary text-xs font-bold hover:underline">Modifier</button>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{t('account.infos')}</h4>
+                        <button onClick={handleOpenOverdraft} className="text-primary text-xs font-bold hover:underline">{t('common.edit')}</button>
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                            <span className="text-slate-500">Découvert autorisé</span>
-                            <span className="font-medium text-slate-900 dark:text-white">{formatMoney(overdraftLimit)}</span>
+                            <span className="text-slate-500">{t('account.overdraft')}</span>
+                            <span className="font-medium text-slate-900 dark:text-white">{formatGlobalMoney(overdraftLimit)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-slate-500">Taux débiteur</span>
+                            <span className="text-slate-500">{t('account.rate')}</span>
                             <span className="font-medium text-slate-900 dark:text-white">7.5%</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-slate-500">Ouvert le</span>
+                            <span className="text-slate-500">{t('account.opened_on')}</span>
                             <span className="font-medium text-slate-900 dark:text-white">12 Jan 2020</span>
                         </div>
                     </div>
@@ -313,7 +314,7 @@ const AccountDetailsPage: React.FC = () => {
         {/* Transaction History */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Historique des opérations</h3>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white">{t('account.history')}</h3>
                 <button className="text-slate-400 hover:text-primary"><span className="material-symbols-outlined">filter_list</span></button>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -326,19 +327,19 @@ const AccountDetailsPage: React.FC = () => {
                             <div className="flex justify-between items-center mb-1">
                                 <p className="font-bold text-slate-900 dark:text-white">{tx.name}</p>
                                 <p className={`font-bold ${tx.amt > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>
-                                    {tx.amt > 0 ? '+' : ''} {formatMoney(tx.amt)}
+                                    {tx.amt > 0 ? '+' : ''} {formatGlobalMoney(tx.amt)}
                                 </p>
                             </div>
                             <div className="flex justify-between items-center">
                                 <p className="text-xs text-slate-500">{tx.cat} • {formatTxDate(tx.date)}</p>
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${tx.status === 'Complété' ? 'text-emerald-500' : 'text-amber-500'}`}>{tx.status}</span>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${tx.status === 'Complété' || tx.status === t('common.success') ? 'text-emerald-500' : 'text-amber-500'}`}>{tx.status}</span>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
             <div className="p-4 text-center border-t border-slate-100 dark:border-slate-800">
-                <button className="text-sm font-bold text-primary hover:underline">Charger plus</button>
+                <button className="text-sm font-bold text-primary hover:underline">{t('common.load_more')}</button>
             </div>
         </div>
 
@@ -349,18 +350,18 @@ const AccountDetailsPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
             <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Modifier le RIB</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('account.modals.edit_rib_title')}</h3>
                     <button onClick={() => setShowEditIbanModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl flex gap-3 mb-6 border border-blue-100 dark:border-blue-900/30">
                     <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
                     <p className="text-xs text-blue-800 dark:text-blue-200">
-                        Attention : Vous êtes sur le point de modifier l'IBAN affiché. Ceci se répercutera instantanément sur toute la plateforme.
+                        {t('account.modals.edit_rib_warning')}
                     </p>
                 </div>
                 <form onSubmit={handleSaveIban} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nouvel IBAN</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t('account.modals.new_iban')}</label>
                         <input 
                             type="text" 
                             required 
@@ -371,10 +372,10 @@ const AccountDetailsPage: React.FC = () => {
                     </div>
                     <div className="flex gap-3">
                         <button type="button" onClick={() => setShowEditIbanModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700">
-                            Annuler
+                            {t('common.cancel')}
                         </button>
                         <button type="submit" className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover shadow-lg shadow-primary/20">
-                            Enregistrer
+                            {t('common.save')}
                         </button>
                     </div>
                 </form>
@@ -387,12 +388,12 @@ const AccountDetailsPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
             <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Renommer le compte</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('account.modals.rename_title')}</h3>
                     <button onClick={() => setShowRenameModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
                 </div>
                 <form onSubmit={handleSaveName} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom du compte</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t('account.modals.account_name')}</label>
                         <input 
                             type="text" 
                             required 
@@ -403,10 +404,10 @@ const AccountDetailsPage: React.FC = () => {
                     </div>
                     <div className="flex gap-3">
                         <button type="button" onClick={() => setShowRenameModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700">
-                            Annuler
+                            {t('common.cancel')}
                         </button>
                         <button type="submit" className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover shadow-lg shadow-primary/20">
-                            Valider
+                            {t('common.validate')}
                         </button>
                     </div>
                 </form>
@@ -419,12 +420,12 @@ const AccountDetailsPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
             <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Découvert Autorisé</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('account.modals.overdraft_title')}</h3>
                     <button onClick={() => setShowOverdraftModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
                 </div>
                 <form onSubmit={handleSaveOverdraft} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Montant autorisé (€)</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t('account.modals.auth_amount')}</label>
                         <input 
                             type="number" 
                             min="0"
@@ -439,15 +440,15 @@ const AccountDetailsPage: React.FC = () => {
                      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl flex gap-3 border border-yellow-100 dark:border-yellow-900/30">
                         <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 shrink-0">warning</span>
                         <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                            Une augmentation du découvert est soumise à étude. Pour cette démo, la mise à jour est immédiate.
+                            {t('account.modals.overdraft_warning')}
                         </p>
                     </div>
                     <div className="flex gap-3">
                         <button type="button" onClick={() => setShowOverdraftModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700">
-                            Annuler
+                            {t('common.cancel')}
                         </button>
                         <button type="submit" className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover shadow-lg shadow-primary/20">
-                            Mettre à jour
+                            {t('common.save')}
                         </button>
                     </div>
                 </form>
@@ -460,7 +461,7 @@ const AccountDetailsPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
             <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Paramètres du compte</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('account.settings_modal.title')}</h3>
                     <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
                 </div>
                 <div className="p-2">
@@ -469,8 +470,8 @@ const AccountDetailsPage: React.FC = () => {
                             <span className="material-symbols-outlined">edit_document</span>
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">Modifier le RIB</p>
-                            <p className="text-xs text-slate-500">Mettre à jour l'IBAN affiché</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{t('account.edit_rib')}</p>
+                            <p className="text-xs text-slate-500">{t('account.settings_modal.edit_rib_desc')}</p>
                         </div>
                     </button>
                     <button onClick={handleOpenRename} className="w-full text-left flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
@@ -478,8 +479,8 @@ const AccountDetailsPage: React.FC = () => {
                             <span className="material-symbols-outlined">edit</span>
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">Renommer le compte</p>
-                            <p className="text-xs text-slate-500">Personnaliser l'intitulé</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{t('account.settings_modal.rename')}</p>
+                            <p className="text-xs text-slate-500">{t('account.settings_modal.rename_desc')}</p>
                         </div>
                     </button>
                      <button onClick={() => { setShowSettingsModal(false); window.print(); }} className="w-full text-left flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
@@ -487,8 +488,8 @@ const AccountDetailsPage: React.FC = () => {
                             <span className="material-symbols-outlined">download</span>
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">Télécharger RIB (PDF)</p>
-                            <p className="text-xs text-slate-500">Format officiel bancaire</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{t('account.settings_modal.download_rib')}</p>
+                            <p className="text-xs text-slate-500">{t('account.settings_modal.download_desc')}</p>
                         </div>
                     </button>
                      <button onClick={handleOpenOverdraft} className="w-full text-left flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors group">
@@ -496,14 +497,14 @@ const AccountDetailsPage: React.FC = () => {
                             <span className="material-symbols-outlined">equalizer</span>
                         </div>
                         <div className="flex-1">
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">Gérer les plafonds</p>
-                            <p className="text-xs text-slate-500">Virements et découvert</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{t('account.settings_modal.limits')}</p>
+                            <p className="text-xs text-slate-500">{t('account.settings_modal.limits_desc')}</p>
                         </div>
                     </button>
                 </div>
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                     <button className="w-full py-3 text-red-500 font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors">
-                        Clôturer ce compte
+                        {t('account.settings_modal.close_account')}
                     </button>
                 </div>
             </div>

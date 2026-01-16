@@ -37,9 +37,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Sidebar Responsive */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative w-full pb-24 md:pb-0">
+      {/* 
+          pb-[calc(env(safe-area-inset-bottom)+5rem)] : 
+          Gère l'espace pour la barre de navigation mobile + la barre de geste iOS/Android 
+      */}
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative w-full pb-[calc(env(safe-area-inset-bottom)+5rem)] md:pb-0">
         {/* Mobile Header (Visible uniquement sur mobile) */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-slate-900 text-white sticky top-0 z-30 shadow-md">
+        <header className="md:hidden flex items-center justify-between p-4 bg-slate-900 text-white sticky top-0 z-30 shadow-md pt-[calc(env(safe-area-inset-top)+1rem)]">
           <div className="flex items-center gap-4">
             {/* Hamburger Button (3 traits) */}
             <button 

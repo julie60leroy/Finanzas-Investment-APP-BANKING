@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, transactions, notifications, beneficiaries, formatTxDate, t, language } = useApp();
+  const { user, transactions, notifications, beneficiaries, formatTxDate, t, currentLocale, formatGlobalMoney } = useApp();
   const [copiedIban, setCopiedIban] = useState(false);
 
   // --- Calculs Financiers ---
@@ -16,16 +16,13 @@ const DashboardPage: React.FC = () => {
 
   const currentIban = user?.checkingIban || "FR76 3000 6000 0123 4567 8901 234";
   const maskedIban = `FR76 •••• •••• ${currentIban.slice(-4)}`;
-  const accountName = user?.checkingAccountName || "Compte Courant";
-
-  const formatCurrency = (amount: number) => 
-    new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  const accountName = user?.checkingAccountName || t('dashboard.accounts.checking');
 
   const chartData = [
-    { name: 'Logement', value: 35, color: '#1e293b' },
-    { name: 'Alim.', value: 25, color: '#334155' },
-    { name: 'Loisirs', value: 25, color: '#D92D20' },
-    { name: 'Épargne', value: 15, color: '#94a3b8' },
+    { name: t('dashboard.chart.housing'), value: 35, color: '#1e293b' },
+    { name: t('dashboard.chart.food'), value: 25, color: '#334155' },
+    { name: t('dashboard.chart.leisure'), value: 25, color: '#D92D20' },
+    { name: t('dashboard.chart.savings'), value: 15, color: '#94a3b8' },
   ];
 
   const recentTransactions = transactions.slice(0, 5);
@@ -38,7 +35,7 @@ const DashboardPage: React.FC = () => {
     setTimeout(() => setCopiedIban(false), 2000);
   };
 
-  const today = new Date().toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString(currentLocale, { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-black/20 p-4 md:p-8 lg:p-10 font-sans pb-24 md:pb-8">
@@ -79,7 +76,7 @@ const DashboardPage: React.FC = () => {
             <div>
               <p className="text-slate-400 font-medium text-xs md:text-sm uppercase tracking-wider mb-2">{t('dashboard.wealth_estimated')}</p>
               <div className="flex flex-wrap items-baseline gap-3 md:gap-4">
-                <span className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight">{formatCurrency(totalBalance)}</span>
+                <span className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight">{formatGlobalMoney(totalBalance)}</span>
                 <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10">
                   <span className="material-symbols-outlined text-green-400 text-sm">trending_up</span>
                   <span className="text-green-400 text-xs font-bold">+2.4%</span>
@@ -139,7 +136,7 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button 
             onClick={() => navigate('/virement-beneficiary')}
-            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-primary/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-primary/30 transition-all group active:scale-95"
           >
             <div className="size-10 md:size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">swap_horiz</span>
@@ -149,7 +146,7 @@ const DashboardPage: React.FC = () => {
           
           <button 
             onClick={() => navigate('/cards')}
-            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-blue-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-blue-500/30 transition-all group active:scale-95"
           >
             <div className="size-10 md:size-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">credit_card</span>
@@ -159,7 +156,7 @@ const DashboardPage: React.FC = () => {
 
           <button 
             onClick={(e) => copyIban(e)}
-            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-emerald-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-emerald-500/30 transition-all group active:scale-95"
           >
             <div className={`size-10 md:size-12 rounded-full flex items-center justify-center transition-colors ${copiedIban ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'}`}>
               <span className="material-symbols-outlined">{copiedIban ? 'check' : 'content_copy'}</span>
@@ -169,7 +166,7 @@ const DashboardPage: React.FC = () => {
 
           <button 
             onClick={() => navigate('/statement')}
-            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-orange-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-3 p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-lg hover:border-orange-500/30 transition-all group active:scale-95"
           >
             <div className="size-10 md:size-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
               <span className="material-symbols-outlined">description</span>
@@ -179,10 +176,11 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* --- ACCOUNTS GRID --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Adaptation pour tablette : md:grid-cols-2 et lg:grid-cols-3 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <div 
             onClick={() => navigate('/account-checking')}
-            className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
+            className="md:col-span-2 xl:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-all hover:shadow-md"
           >
              <div className="flex justify-between items-start z-10">
                 <div className="flex items-center gap-3">
@@ -201,12 +199,12 @@ const DashboardPage: React.FC = () => {
              </div>
              
              <div className="mt-8 z-10">
-                <p className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{formatCurrency(checkingBalance)}</p>
+                <p className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{formatGlobalMoney(checkingBalance)}</p>
                 <div className="mt-4 flex gap-2">
                    <div className="h-1.5 flex-1 bg-primary rounded-full"></div>
                    <div className="h-1.5 flex-1 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">Plafond : 1 250 € / 2 500 €</p>
+                <p className="mt-2 text-xs text-slate-500">{t('dashboard.accounts.limit')} : {formatGlobalMoney(1250)} / {formatGlobalMoney(2500)}</p>
              </div>
           </div>
 
@@ -217,14 +215,14 @@ const DashboardPage: React.FC = () => {
                       <span className="material-symbols-outlined text-primary">savings</span>
                    </div>
                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-sm md:text-base">Livret A</h3>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm md:text-base">{t('dashboard.accounts.savings')}</h3>
                       <p className="text-xs text-green-600 font-bold">3.00% Net</p>
                    </div>
                 </div>
              </div>
              <div className="mt-8">
-                <p className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(savingsBalance)}</p>
-                <p className="text-xs text-slate-500 mt-1">+ 125,40 € d'intérêts (YTD)</p>
+                <p className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">{formatGlobalMoney(savingsBalance)}</p>
+                <p className="text-xs text-slate-500 mt-1">+ {formatGlobalMoney(125.40)} {t('dashboard.accounts.interest')}</p>
              </div>
           </div>
         </div>
@@ -233,7 +231,7 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
              <h3 className="font-bold text-slate-900 dark:text-white mb-6">{t('dashboard.expenses_breakdown')}</h3>
-             <div className="relative h-64">
+             <div className="relative h-56 md:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -257,7 +255,7 @@ const DashboardPage: React.FC = () => {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                    <span className="text-xs text-slate-400 font-medium uppercase">{t('dashboard.total_out')}</span>
-                   <span className="text-xl font-bold text-slate-900 dark:text-white">2 430 €</span>
+                   <span className="text-xl font-bold text-slate-900 dark:text-white">{formatGlobalMoney(2430)}</span>
                 </div>
              </div>
              
@@ -284,10 +282,10 @@ const DashboardPage: React.FC = () => {
                 <table className="w-full text-left border-collapse">
                    <thead>
                       <tr className="text-xs uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                         <th className="py-3 font-semibold whitespace-nowrap pr-4">Transaction</th>
-                         <th className="py-3 font-semibold whitespace-nowrap px-4">Catégorie</th>
-                         <th className="py-3 font-semibold text-right whitespace-nowrap">Montant</th>
-                         <th className="py-3 font-semibold text-right hidden sm:table-cell">Statut</th>
+                         <th className="py-3 font-semibold whitespace-nowrap pr-4">{t('transactions.table.merchant')}</th>
+                         <th className="py-3 font-semibold whitespace-nowrap px-4 hidden sm:table-cell">{t('transactions.table.category')}</th>
+                         <th className="py-3 font-semibold text-right whitespace-nowrap">{t('common.amount')}</th>
+                         <th className="py-3 font-semibold text-right hidden sm:table-cell">{t('common.status')}</th>
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -304,16 +302,16 @@ const DashboardPage: React.FC = () => {
                                   </div>
                                </div>
                             </td>
-                            <td className="py-4 px-4">
+                            <td className="py-4 px-4 hidden sm:table-cell">
                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap">
                                   {tx.cat}
                                </span>
                             </td>
                             <td className={`py-4 text-right font-bold text-sm ${tx.amt > 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-white'} whitespace-nowrap`}>
-                               {tx.amt > 0 ? '+' : ''} {formatCurrency(tx.amt)}
+                               {tx.amt > 0 ? '+' : ''} {formatGlobalMoney(tx.amt)}
                             </td>
                             <td className="py-4 text-right hidden sm:table-cell">
-                               <span className={`text-xs font-bold ${tx.status === 'Complété' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                               <span className={`text-xs font-bold ${tx.status === t('common.success') || tx.status === 'Complété' ? 'text-emerald-500' : 'text-amber-500'}`}>
                                   {tx.status}
                                </span>
                             </td>

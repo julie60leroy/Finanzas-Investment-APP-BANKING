@@ -5,7 +5,7 @@ import { useApp } from '../../context/AppContext';
 const VirementConfirmPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { performTransfer, user } = useApp();
+  const { performTransfer, user, t } = useApp();
   
   // Get data passed from previous screen
   const state = location.state || {};
@@ -15,6 +15,11 @@ const VirementConfirmPage: React.FC = () => {
   const fees = state.fees || (transferType === 'instant' ? 4.52 : 0.50);
   const beneficiary = state.beneficiary;
   const motif = state.motif || "Virement";
+  
+  // Données de devises dynamiques
+  const sourceCurrency = state.sourceCurrency || 'EUR';
+  const targetCurrency = state.targetCurrency || 'USD';
+  const rate = state.rate || 1.0842;
 
   // Local State for PIN Validation
   const [pin, setPin] = useState('');
@@ -34,11 +39,15 @@ const VirementConfirmPage: React.FC = () => {
         navigate('/virement-success', { 
             state: { 
                 amount, 
-                beneficiary, // L'objet complet (IBAN, Banque, etc)
+                converted: convertedAmount,
+                beneficiary, 
                 motif, 
                 date: new Date().toISOString(),
                 fees,
-                transferType
+                transferType,
+                sourceCurrency,
+                targetCurrency,
+                rate
             } 
         });
     } else {
@@ -59,10 +68,10 @@ const VirementConfirmPage: React.FC = () => {
                 className="self-start flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-4 pointer-events-auto cursor-pointer"
             >
                 <span className="material-symbols-outlined text-lg">arrow_back</span>
-                Retour au montant
+                {t('common.back')}
             </button>
-            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Virement : Sécurité et Confirmation</h1>
-            <p className="text-slate-500 text-lg">Vérifiez les détails avant de confirmer l'opération.</p>
+            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">{t('transfers.title')}</h1>
+            <p className="text-slate-500 text-lg">{t('transfers.step3_desc')}</p>
           </div>
 
           {/* Stepper */}
@@ -75,7 +84,7 @@ const VirementConfirmPage: React.FC = () => {
                 <div className="flex size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm ring-4 ring-white dark:ring-background-dark">
                   <span className="material-symbols-outlined text-sm font-bold">check</span>
                 </div>
-                <span className="absolute top-14 text-sm font-medium text-slate-500 whitespace-nowrap">Bénéficiaire</span>
+                <span className="absolute top-14 text-sm font-medium text-slate-500 whitespace-nowrap">{t('transfers.step1')}</span>
               </div>
 
               {/* Line 1-2 Filled */}
@@ -86,7 +95,7 @@ const VirementConfirmPage: React.FC = () => {
                 <div className="flex size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm ring-4 ring-white dark:ring-background-dark">
                   <span className="material-symbols-outlined text-sm font-bold">check</span>
                 </div>
-                <span className="absolute top-14 text-sm font-medium text-slate-500 whitespace-nowrap">Montant et Devises</span>
+                <span className="absolute top-14 text-sm font-medium text-slate-500 whitespace-nowrap">{t('transfers.step2')}</span>
               </div>
 
               {/* Step 3: Active */}
@@ -94,7 +103,7 @@ const VirementConfirmPage: React.FC = () => {
                 <div className="flex size-10 items-center justify-center rounded-full bg-primary text-white shadow-lg ring-4 ring-white dark:ring-background-dark">
                   <span className="text-sm font-bold">3</span>
                 </div>
-                <span className="absolute top-14 text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">Sécurité</span>
+                <span className="absolute top-14 text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">{t('transfers.step3')}</span>
               </div>
             </div>
           </div>
@@ -104,34 +113,34 @@ const VirementConfirmPage: React.FC = () => {
             {/* Left Column: Summary */}
             <div className="lg:col-span-7 flex flex-col gap-6">
               <div className="rounded-2xl bg-white dark:bg-slate-900 p-8 border border-slate-200 dark:border-slate-800">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Récapitulatif du virement</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{t('transfers.confirm.summary')}</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500">Motif du virement</span>
+                    <span className="text-slate-500">{t('transfers.amount.motif')}</span>
                     <span className="font-bold text-slate-900 dark:text-white">{motif}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500">Type de virement</span>
+                    <span className="text-slate-500">{t('transfers.amount.type')}</span>
                     <span className="font-bold text-slate-900 dark:text-white capitalize flex items-center gap-2">
                         {transferType === 'instant' ? <span className="material-symbols-outlined text-primary text-lg">bolt</span> : <span className="material-symbols-outlined text-slate-500 text-lg">schedule</span>}
-                        {transferType === 'instant' ? 'Instantané' : 'Standard'}
+                        {transferType === 'instant' ? t('transfers.amount.instant') : t('transfers.amount.standard')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500">Montant envoyé</span>
-                    <span className="text-xl font-bold text-slate-900 dark:text-white">{amount} EUR</span>
+                    <span className="text-slate-500">{t('transfers.confirm.sent')}</span>
+                    <span className="text-xl font-bold text-slate-900 dark:text-white">{amount} {sourceCurrency}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500">Taux de change</span>
-                    <span className="font-medium text-slate-900 dark:text-white">1 EUR = 1.0842 USD</span>
+                    <span className="text-slate-500">{t('transfers.confirm.rate')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">1 {sourceCurrency} = {rate.toFixed(4)} {targetCurrency}</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-500">Frais de service</span>
-                    <span className="font-medium text-slate-900 dark:text-white">{fees.toFixed(2)} EUR</span>
+                    <span className="text-slate-500">{t('transfers.confirm.fees')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{fees.toFixed(2)} {sourceCurrency}</span>
                   </div>
                   <div className="flex justify-between items-center py-3">
-                    <span className="text-slate-500 font-semibold">Le bénéficiaire reçoit</span>
-                    <span className="text-2xl font-black text-primary">{convertedAmount} USD</span>
+                    <span className="text-slate-500 font-semibold">{t('transfers.confirm.received')}</span>
+                    <span className="text-2xl font-black text-primary">{convertedAmount} {targetCurrency}</span>
                   </div>
                 </div>
               </div>
@@ -158,9 +167,9 @@ const VirementConfirmPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-slate-400">calendar_today</span>
                   <div>
-                    <p className="text-xs text-slate-500">Arrivée estimée</p>
+                    <p className="text-xs text-slate-500">{t('transfers.amount.arrival')}</p>
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {transferType === 'instant' ? "Aujourd'hui, immédiat" : "Demain, le 14 Octobre"}
+                        {transferType === 'instant' ? t('transfers.amount.today') : t('transfers.amount.tomorrow')}
                     </p>
                   </div>
                 </div>
@@ -171,7 +180,7 @@ const VirementConfirmPage: React.FC = () => {
           <div className="mt-auto py-8 flex justify-center">
             <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 dark:bg-slate-800 px-6 py-3 border border-dashed border-slate-200 dark:border-slate-700">
               <span className="material-symbols-outlined text-slate-400">headset_mic</span>
-              <span className="text-sm text-slate-500">Besoin d'aide ? <a className="font-medium text-slate-900 dark:text-white hover:underline" href="#">Contacter le support</a></span>
+              <span className="text-sm text-slate-500">{t('transfers.help')} <a className="font-medium text-slate-900 dark:text-white hover:underline" href="#">{t('transfers.contact')}</a></span>
             </div>
           </div>
         </div>
@@ -183,9 +192,9 @@ const VirementConfirmPage: React.FC = () => {
               <div className="mx-auto size-16 bg-red-50 dark:bg-red-900/20 text-primary rounded-full flex items-center justify-center mb-6">
                 <span className="material-symbols-outlined text-3xl">dialpad</span>
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Code Secret</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('transfers.confirm.pin_title')}</h2>
               <p className="text-slate-500 dark:text-slate-400 mb-8">
-                Entrez votre code à <span className="font-bold text-slate-900 dark:text-white">4 chiffres</span> pour valider le virement de {amount} EUR.
+                {t('transfers.confirm.pin_desc')}
               </p>
               
               <div className="space-y-6">
@@ -202,7 +211,7 @@ const VirementConfirmPage: React.FC = () => {
                       className={`w-full text-center text-4xl tracking-[0.5em] font-black rounded-xl border ${error ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200 dark:border-slate-700'} bg-slate-50 dark:bg-slate-800 p-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all`}
                     />
                     {error && (
-                        <p className="absolute -bottom-6 left-0 right-0 text-center text-xs font-bold text-red-500 animate-pulse">Code incorrect. Réessayez.</p>
+                        <p className="absolute -bottom-6 left-0 right-0 text-center text-xs font-bold text-red-500 animate-pulse">{t('transfers.confirm.pin_error')}</p>
                     )}
                 </div>
 
@@ -211,7 +220,7 @@ const VirementConfirmPage: React.FC = () => {
                   disabled={pin.length !== 4}
                   className="w-full py-4 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition-colors shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Confirmer le virement
+                  {t('transfers.confirm.btn_confirm')}
                 </button>
               </div>
               
@@ -219,12 +228,12 @@ const VirementConfirmPage: React.FC = () => {
                 onClick={() => navigate('/virement-amount', { state: { beneficiary } })}
                 className="mt-8 text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-sm text-slate-400">lock</span>
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Validation Sécurisée</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{t('transfers.confirm.secure_validation')}</span>
             </div>
           </div>
         </div>

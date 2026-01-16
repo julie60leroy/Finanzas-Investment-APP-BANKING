@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useApp();
+  const { login, t } = useApp();
   const [email, setEmail] = useState("marc.dubois@finanzas.com");
 
   const handleLogin = (e: React.FormEvent) => {
@@ -24,20 +24,20 @@ const LoginPage: React.FC = () => {
           </div>
           <div className="max-w-md">
             <h2 className="text-white text-5xl font-black leading-tight tracking-tight mb-6">
-              L'excellence financière, à portée de clic.
+              {t('auth.hero_title')}
             </h2>
             <p className="text-gray-400 text-lg leading-relaxed">
-              Accédez à votre portefeuille institutionnel et gérez vos actifs avec la sécurité d'une banque privée.
+              {t('auth.hero_subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-6 text-white/60 text-sm">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">verified_user</span>
-              <span>Certifié DSP2</span>
+              <span>{t('auth.cert_dsp2')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">lock</span>
-              <span>Chiffrement AES-256</span>
+              <span>{t('auth.cert_aes')}</span>
             </div>
           </div>
         </div>
@@ -45,15 +45,15 @@ const LoginPage: React.FC = () => {
       <div className="w-full lg:w-1/2 bg-white dark:bg-background-dark flex flex-col justify-center items-center px-8 lg:px-24">
         <div className="w-full max-w-md space-y-8">
           <div className="space-y-2">
-            <h2 className="text-[#171211] dark:text-white text-3xl font-bold tracking-tight">Connexion</h2>
-            <p className="text-[#876664] dark:text-gray-400">Ravi de vous revoir. Veuillez entrer vos accès.</p>
+            <h2 className="text-[#171211] dark:text-white text-3xl font-bold tracking-tight">{t('auth.title')}</h2>
+            <p className="text-[#876664] dark:text-gray-400">{t('auth.subtitle')}</p>
           </div>
           <form
             className="space-y-6"
             onSubmit={handleLogin}
           >
             <div className="flex flex-col gap-2">
-              <label className="text-[#171211] dark:text-white text-sm font-medium">Identifiant ou E-mail</label>
+              <label className="text-[#171211] dark:text-white text-sm font-medium">{t('auth.label_id')}</label>
               <input
                 className="form-input w-full rounded-lg border-[#e5dcdc] dark:border-gray-700 bg-white dark:bg-gray-800 h-14 p-[15px] focus:ring-primary text-slate-900 dark:text-white"
                 value={email}
@@ -64,9 +64,9 @@ const LoginPage: React.FC = () => {
             </div>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label className="text-[#171211] dark:text-white text-sm font-medium">Mot de passe</label>
+                <label className="text-[#171211] dark:text-white text-sm font-medium">{t('auth.label_pass')}</label>
                 <a className="text-primary text-sm font-semibold hover:underline" href="#">
-                  Oublié ?
+                  {t('auth.forgot')}
                 </a>
               </div>
               <input
@@ -79,14 +79,14 @@ const LoginPage: React.FC = () => {
               className="w-full h-14 bg-primary text-white rounded-lg font-bold hover:bg-red-700 transition-colors shadow-lg shadow-primary/20"
               type="submit"
             >
-              Se connecter
+              {t('auth.btn_login')}
             </button>
           </form>
           <div className="text-center pt-4">
             <p className="text-[#876664] dark:text-gray-400">
-              Nouveau ?{' '}
+              {t('auth.new_account')}{' '}
               <a className="text-primary font-bold hover:underline" href="#">
-                Créer un compte
+                {t('auth.create_account')}
               </a>
             </p>
           </div>

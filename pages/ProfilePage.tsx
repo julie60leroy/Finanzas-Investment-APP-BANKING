@@ -15,7 +15,7 @@ interface Device {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, updateUser } = useApp();
+  const { user, updateUser, t, language } = useApp();
   
   // --- STATE GESTION DES ONGLETS ---
   const [activeTab, setActiveTab] = useState<'identity' | 'security' | 'documents' | 'settings'>('identity');
@@ -39,12 +39,9 @@ const ProfilePage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState<'password' | 'pin' | 'phone' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [newPin, setNewPin] = useState('');
-  const [devices, setDevices] = useState<Device[]>([
-    { id: '1', name: 'MacBook Pro (Chrome)', type: 'desktop', location: 'Paris, France', ip: '192.168.1.1', lastActive: "A l'instant", isCurrent: true },
-    { id: '2', name: 'iPhone 15 Pro (App)', type: 'mobile', location: 'Lyon, France', ip: '82.12.155.xx', lastActive: 'Il y a 2h', isCurrent: false },
-  ]);
+  const [devices, setDevices] = useState<Device[]>([]);
 
-  // Initialisation
+  // Initialisation et mise à jour quand la langue change
   useEffect(() => {
     if (user) {
       const names = user.name.split(' ');
@@ -58,7 +55,11 @@ const ProfilePage: React.FC = () => {
       setCountry(user.country || 'France');
       setJobTitle(user.jobTitle || 'Investisseur');
     }
-  }, [user]);
+    setDevices([
+        { id: '1', name: 'MacBook Pro (Chrome)', type: 'desktop', location: 'Paris, France', ip: '192.168.1.1', lastActive: t('common.unknown') === 'Unknown' ? "Just now" : "A l'instant", isCurrent: true },
+        { id: '2', name: 'iPhone 15 Pro (App)', type: 'mobile', location: 'Lyon, France', ip: '82.12.155.xx', lastActive: t('common.unknown') === 'Unknown' ? "2h ago" : 'Il y a 2h', isCurrent: false },
+    ]);
+  }, [user, language, t]);
 
   // --- HANDLERS ---
   const handleSaveProfile = () => {
@@ -141,9 +142,9 @@ const ProfilePage: React.FC = () => {
         </div>
         <div className="flex flex-1 justify-end gap-8 items-center">
           <nav className="flex items-center gap-6 hidden xl:flex">
-            <Link to="/" className="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors">Tableau de bord</Link>
-            <Link to="/transactions" className="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors">Investissements</Link>
-            <Link to="/profile" className="text-primary text-sm font-bold border-b-2 border-primary py-1">Profil</Link>
+            <Link to="/" className="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors">{t('nav.dashboard')}</Link>
+            <Link to="/transactions" className="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors">{t('nav.activity')}</Link>
+            <Link to="/profile" className="text-primary text-sm font-bold border-b-2 border-primary py-1">{t('nav.profile')}</Link>
           </nav>
           <div className="flex gap-2">
             <button onClick={() => navigate('/notifications')} className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
@@ -165,8 +166,9 @@ const ProfilePage: React.FC = () => {
         <div className="layout-content-container flex flex-col max-w-[1200px] flex-1 w-full">
           
           {/* Titre Mobile */}
-          <div className="md:hidden mb-4 px-1">
-             <h1 className="text-2xl font-black text-slate-900 dark:text-white">Mon Profil</h1>
+          <div className="md:hidden mb-4 px-1 flex items-center gap-3">
+             <button onClick={() => navigate(-1)} className="p-1 -ml-1"><span className="material-symbols-outlined">arrow_back</span></button>
+             <h1 className="text-2xl font-black text-slate-900 dark:text-white">{t('profile.title')}</h1>
           </div>
 
           {/* Profile Header Card */}
@@ -174,7 +176,7 @@ const ProfilePage: React.FC = () => {
             
             {isEditing && (
                 <div className="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded shadow animate-pulse">
-                    MODE ÉDITION
+                    {t('profile.edit_mode')}
                 </div>
             )}
 
@@ -209,8 +211,8 @@ const ProfilePage: React.FC = () => {
                     <h1 className="text-slate-900 dark:text-white text-xl md:text-2xl font-bold tracking-tight truncate">{user.name}</h1>
                     <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider shrink-0">
                       <span className="material-symbols-outlined text-[12px] md:text-xs">verified</span>
-                      <span className="hidden sm:inline">KYC Validé</span>
-                      <span className="sm:hidden">Validé</span>
+                      <span className="hidden sm:inline">{t('profile.kyc_validated')}</span>
+                      <span className="sm:hidden">{t('admin.verified')}</span>
                     </div>
                   </div>
                   {isEditing ? (
@@ -227,7 +229,7 @@ const ProfilePage: React.FC = () => {
                   
                   <div className="flex items-center gap-2 mt-2 text-xs text-slate-400 hidden sm:flex">
                     <span className="material-symbols-outlined text-sm">security</span>
-                    <span>Compte protégé (2FA actif)</span>
+                    <span>{t('profile.protected')}</span>
                   </div>
                 </div>
               </div>
@@ -235,18 +237,18 @@ const ProfilePage: React.FC = () => {
                 {isEditing ? (
                     <button onClick={handleSaveProfile} className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
                         <span className="material-symbols-outlined text-sm">save</span>
-                        Enregistrer
+                        {t('common.save')}
                     </button>
                 ) : (
                     <button onClick={() => setIsEditing(true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
                         <span className="material-symbols-outlined text-sm">edit_square</span>
-                        <span className="hidden sm:inline">Éditer profil</span>
-                        <span className="sm:hidden">Éditer</span>
+                        <span className="hidden sm:inline">{t('common.edit')}</span>
+                        <span className="sm:hidden">{t('common.edit')}</span>
                     </button>
                 )}
                 {isEditing && (
                     <button onClick={() => setIsEditing(false)} className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                        Annuler
+                        {t('common.cancel')}
                     </button>
                 )}
               </div>
@@ -261,336 +263,295 @@ const ProfilePage: React.FC = () => {
                 className={`flex items-center gap-2 border-b-2 pb-3 pt-2 transition-all ${activeTab === 'identity' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
                 <span className="material-symbols-outlined text-sm">person</span>
-                <span className="text-sm font-bold tracking-wide">Identité & Fiscalité</span>
+                <span className="text-sm font-bold tracking-wide">{t('profile.tabs.identity')}</span>
               </button>
               <button 
                 onClick={() => setActiveTab('security')}
                 className={`flex items-center gap-2 border-b-2 pb-3 pt-2 transition-all ${activeTab === 'security' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
                 <span className="material-symbols-outlined text-sm">shield</span>
-                <span className="text-sm font-bold tracking-wide">Sécurité</span>
+                <span className="text-sm font-bold tracking-wide">{t('profile.tabs.security')}</span>
               </button>
               <button 
                 onClick={() => setActiveTab('documents')}
                 className={`flex items-center gap-2 border-b-2 pb-3 pt-2 transition-all ${activeTab === 'documents' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
                 <span className="material-symbols-outlined text-sm">description</span>
-                <span className="text-sm font-bold tracking-wide">Documents</span>
+                <span className="text-sm font-bold tracking-wide">{t('profile.docs.title')}</span>
               </button>
               <button 
                 onClick={() => setActiveTab('settings')}
                 className={`flex items-center gap-2 border-b-2 pb-3 pt-2 transition-all ${activeTab === 'settings' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
                 <span className="material-symbols-outlined text-sm">settings</span>
-                <span className="text-sm font-bold tracking-wide">Paramètres</span>
+                <span className="text-sm font-bold tracking-wide">{t('profile.tabs.settings')}</span>
               </button>
             </div>
           </div>
 
-          {/* --- CONTENU DES ONGLETS --- */}
+          {/* Tab Content */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm min-h-[400px]">
+            
+            {/* --- IDENTITY --- */}
+            {activeTab === 'identity' && (
+              <div className="space-y-8 animate-[fadeIn_0.3s_ease-out]">
+                 {/* Block 1 */}
+                 <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.identity.title')}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.identity.firstname')}</label>
+                          {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={firstName} onChange={e => setFirstName(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{firstName}</p>
+                          )}
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.identity.lastname')}</label>
+                           {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={lastName} onChange={e => setLastName(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{lastName}</p>
+                          )}
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.identity.dob')}</label>
+                          <p className="font-medium text-slate-900 dark:text-white">14/05/1985</p>
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.identity.nationality')}</label>
+                          <p className="font-medium text-slate-900 dark:text-white">{t('profile.identity.nationality')} : {country}</p>
+                       </div>
+                    </div>
+                 </div>
 
-          {/* TAB 1: IDENTITÉ & FISCALITÉ */}
-          {activeTab === 'identity' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-[fadeIn_0.2s_ease-out]">
-                {/* Identité Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
-                            <span className="material-symbols-outlined text-primary text-xl">badge</span>
-                            Identité
-                        </h3>
+                 {/* Block 2 */}
+                 <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.contact.title')}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.contact.email')}</label>
+                           {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={email} onChange={e => setEmail(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{email}</p>
+                          )}
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.contact.mobile')}</label>
+                           {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={phone} onChange={e => setPhone(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{phone}</p>
+                          )}
+                       </div>
                     </div>
-                    <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-6">
-                        <div className="space-y-1">
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Prénom</p>
-                            {isEditing ? <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{firstName}</p>}
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Nom</p>
-                            {isEditing ? <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{lastName}</p>}
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Date de naissance</p>
-                            <p className="text-slate-900 dark:text-white text-base font-semibold">12 Mai 1985</p>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Nationalité</p>
-                            <p className="text-slate-900 dark:text-white text-base font-semibold">Française</p>
-                        </div>
-                    </div>
-                </div>
+                 </div>
 
-                {/* Coordonnées Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
-                            <span className="material-symbols-outlined text-primary text-xl">contact_mail</span>
-                            Coordonnées
-                        </h3>
+                 {/* Block 3 */}
+                 <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.fiscal.title')}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="md:col-span-2">
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.fiscal.address')}</label>
+                           {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={address} onChange={e => setAddress(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{address}</p>
+                          )}
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.fiscal.zip')}</label>
+                           {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={zipCode} onChange={e => setZipCode(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{zipCode}</p>
+                          )}
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.fiscal.city')}</label>
+                           {isEditing ? (
+                              <input className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm" value={city} onChange={e => setCity(e.target.value)} />
+                          ) : (
+                              <p className="font-bold text-slate-900 dark:text-white">{city}</p>
+                          )}
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.fiscal.country')}</label>
+                          <p className="font-medium text-slate-900 dark:text-white">{country}</p>
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">{t('profile.fiscal.tin')}</label>
+                          <p className="font-mono text-slate-900 dark:text-white">FR 12 34567890123</p>
+                       </div>
                     </div>
-                    <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-6">
-                        <div className="space-y-1">
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Email</p>
-                            {isEditing ? <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold truncate">{email}</p>}
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Mobile</p>
-                            {isEditing ? <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{phone}</p>}
-                        </div>
-                    </div>
-                </div>
+                 </div>
+              </div>
+            )}
 
-                {/* Informations Fiscales Card */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
-                            <span className="material-symbols-outlined text-primary text-xl">gavel</span>
-                            Fiscalité & Résidence
-                        </h3>
-                    </div>
-                    <div className="p-4 md:p-6 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-6">
-                            <div className="space-y-1">
-                                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Adresse</p>
-                                {isEditing ? <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{address}</p>}
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Code Postal</p>
-                                {isEditing ? <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{zipCode}</p>}
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Ville</p>
-                                {isEditing ? <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{city}</p>}
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Pays</p>
-                                {isEditing ? <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded text-slate-900 dark:text-white font-semibold text-sm px-2 py-1 focus:ring-1 focus:ring-primary" /> : <p className="text-slate-900 dark:text-white text-base font-semibold">{country}</p>}
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Numéro Fiscal (TIN)</p>
-                                <p className="text-slate-900 dark:text-white text-base font-semibold tracking-widest">FR 882 991 002</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-          )}
-
-          {/* TAB 2: SÉCURITÉ */}
-          {activeTab === 'security' && (
-            <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
-                {/* Authentification */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                        <span className="material-symbols-outlined text-primary">lock</span>
-                        <h3 className="text-slate-900 dark:text-white text-lg font-bold">Authentification</h3>
-                    </div>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        <div className="flex items-center justify-between p-4 md:p-6">
-                            <div className="flex items-center gap-4 min-w-0">
-                                <div className="text-slate-600 dark:text-slate-400 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 size-12">
+            {/* --- SECURITY --- */}
+            {activeTab === 'security' && (
+               <div className="space-y-8 animate-[fadeIn_0.3s_ease-out]">
+                  {/* Auth */}
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.security.auth_title')}</h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                            <div className="flex items-center gap-4">
+                                <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                                     <span className="material-symbols-outlined">password</span>
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <p className="text-slate-900 dark:text-white text-base font-bold truncate">Mot de passe</p>
-                                    <p className="text-slate-500 text-sm truncate">Modifié il y a 3 mois</p>
+                                <div>
+                                    <p className="font-bold text-slate-900 dark:text-white">{t('profile.security.password')}</p>
+                                    <p className="text-xs text-slate-500">{t('profile.security.modified')} 3 mois</p>
                                 </div>
                             </div>
-                            <button onClick={() => setModalOpen('password')} className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary/20 transition-all whitespace-nowrap ml-2">Modifier</button>
+                            <button className="text-primary font-bold text-sm hover:underline">{t('common.edit')}</button>
                         </div>
-                        <div className="flex items-center justify-between p-4 md:p-6">
-                            <div className="flex items-center gap-4 min-w-0">
-                                <div className="text-slate-600 dark:text-slate-400 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 size-12">
-                                    <span className="material-symbols-outlined">dialpad</span>
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                    <p className="text-slate-900 dark:text-white text-base font-bold truncate">Code secret</p>
-                                    <p className="text-slate-500 text-sm truncate">Pour virements</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setModalOpen('pin')} className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary/20 transition-all whitespace-nowrap ml-2">Gérer</button>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Appareils Connectés */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-primary">devices</span>
-                            <h3 className="text-slate-900 dark:text-white text-lg font-bold">Appareils</h3>
+                         <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                            <div className="flex items-center gap-4">
+                                <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                    <span className="material-symbols-outlined">pin</span>
+                                </div>
+                                <div>
+                                    <p className="font-bold text-slate-900 dark:text-white">{t('profile.security.pin')}</p>
+                                    <p className="text-xs text-slate-500">{t('profile.security.pin_desc')}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setModalOpen('pin')} className="text-primary font-bold text-sm hover:underline">{t('common.edit')}</button>
                         </div>
                     </div>
-                    <div className="p-4 md:p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {devices.map(device => (
-                                <div key={device.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                                        <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
-                                            <span className="material-symbols-outlined">{device.type === 'desktop' ? 'laptop_mac' : 'smartphone'}</span>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-slate-900 dark:text-white font-bold text-sm truncate">{device.name}</p>
-                                                {device.isCurrent && <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Actuel</span>}
-                                            </div>
-                                            <p className="text-slate-500 text-xs truncate">{device.location}</p>
-                                        </div>
+                  </div>
+                  
+                  {/* Devices */}
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.security.devices_title')}</h3>
+                    <div className="space-y-3">
+                        {devices.map(device => (
+                            <div key={device.id} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-xl">
+                                <div className="flex items-center gap-4">
+                                    <span className="material-symbols-outlined text-3xl text-slate-400">{device.type === 'desktop' ? 'computer' : 'smartphone'}</span>
+                                    <div>
+                                        <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            {device.name}
+                                            {device.isCurrent && <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">{t('profile.security.current')}</span>}
+                                        </p>
+                                        <p className="text-xs text-slate-500">{device.location} • {device.ip} • {device.lastActive}</p>
                                     </div>
-                                    {!device.isCurrent && (
-                                        <button onClick={() => handleDeviceLogout(device.id)} className="text-slate-400 hover:text-red-500 transition-colors ml-2 shrink-0">
-                                            <span className="material-symbols-outlined text-xl">logout</span>
-                                        </button>
-                                    )}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-          )}
-
-          {/* TAB 3: DOCUMENTS */}
-          {activeTab === 'documents' && (
-            <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
-                            <span className="material-symbols-outlined text-primary text-xl">folder_shared</span>
-                            Mes Documents
-                        </h3>
-                    </div>
-                    <div className="p-4 space-y-4">
-                        {/* Doc Items */}
-                        <div className="flex flex-col gap-3">
-                            {[
-                                { title: "Carte d'Identité (Recto)", status: "Validé", icon: "identity_platform", color: "text-blue-600 bg-blue-100" },
-                                { title: "Carte d'Identité (Verso)", status: "Validé", icon: "identity_platform", color: "text-blue-600 bg-blue-100" },
-                                { title: "Justificatif de domicile", status: "Facture EDF", icon: "home_pin", color: "text-purple-600 bg-purple-100" }
-                            ].map((doc, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-4 min-w-0">
-                                        <div className={`size-12 ${doc.color} dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0`}>
-                                            <span className="material-symbols-outlined text-xl">{doc.icon}</span>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{doc.title}</p>
-                                            <p className="text-xs text-slate-500 uppercase font-semibold truncate">{doc.status}</p>
-                                        </div>
-                                    </div>
-                                    <span className="material-symbols-outlined text-slate-400 shrink-0 ml-2">visibility</span>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        <button className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-slate-500 hover:border-primary hover:text-primary transition-all group mt-4">
-                            <span className="material-symbols-outlined group-hover:scale-110 transition-transform">cloud_upload</span>
-                            <span className="text-sm font-bold">Ajouter un document</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-          )}
-
-          {/* TAB 4: PARAMÈTRES */}
-          {activeTab === 'settings' && (
-            <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
-                    <h2 className="text-xl font-bold mb-6 text-slate-900 dark:text-white">Préférences Régionales</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wide">Langue</p>
-                            <div className="flex flex-col gap-3">
-                                <div className="p-4 border-2 border-primary bg-primary/5 rounded-xl flex justify-between items-center cursor-pointer">
-                                    <div className="flex gap-3 text-sm font-bold text-slate-900 dark:text-white"><span>🇫🇷</span> Français</div>
-                                    <span className="material-symbols-outlined text-primary">check_circle</span>
-                                </div>
-                                <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800">
-                                    <div className="flex gap-3 text-sm font-bold text-slate-900 dark:text-white"><span>🇺🇸</span> Anglais</div>
-                                </div>
+                                {!device.isCurrent && (
+                                    <button onClick={() => handleDeviceLogout(device.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                                        <span className="material-symbols-outlined">logout</span>
+                                    </button>
+                                )}
                             </div>
-                        </div>
-                        <div>
-                            <p className="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wide">Devise</p>
-                            <div className="flex flex-col gap-3">
-                                <div className="p-4 border-2 border-primary bg-primary/5 rounded-xl flex justify-between items-center cursor-pointer">
-                                    <div className="flex gap-3 text-sm font-bold text-slate-900 dark:text-white">Euro (€)</div>
-                                    <span className="material-symbols-outlined text-primary">check_circle</span>
-                                </div>
-                                <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800">
-                                    <div className="flex gap-3 text-sm font-bold text-slate-900 dark:text-white">Dollar ($)</div>
-                                </div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
-                </div>
-            </div>
-          )}
+                  </div>
+               </div>
+            )}
 
+            {/* --- DOCUMENTS --- */}
+            {activeTab === 'documents' && (
+                <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+                   <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.docs.title')}</h3>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col gap-3 group hover:border-primary transition-colors cursor-pointer">
+                         <div className="flex justify-between items-start">
+                             <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary transition-colors">id_card</span>
+                             <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">{t('profile.docs.validated')}</span>
+                         </div>
+                         <p className="font-bold text-slate-900 dark:text-white">{t('profile.docs.id_front')}</p>
+                         <p className="text-xs text-slate-500">CNI-RECTO.jpg • 2.4 MB</p>
+                      </div>
+
+                       <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col gap-3 group hover:border-primary transition-colors cursor-pointer">
+                         <div className="flex justify-between items-start">
+                             <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary transition-colors">id_card</span>
+                             <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">{t('profile.docs.validated')}</span>
+                         </div>
+                         <p className="font-bold text-slate-900 dark:text-white">{t('profile.docs.id_back')}</p>
+                         <p className="text-xs text-slate-500">CNI-VERSO.jpg • 2.1 MB</p>
+                      </div>
+
+                       <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col gap-3 group hover:border-primary transition-colors cursor-pointer">
+                         <div className="flex justify-between items-start">
+                             <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary transition-colors">home_pin</span>
+                             <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase">{t('profile.docs.validated')}</span>
+                         </div>
+                         <p className="font-bold text-slate-900 dark:text-white">{t('profile.docs.proof_address')}</p>
+                         <p className="text-xs text-slate-500">EDF-OCT2023.pdf • 1.8 MB</p>
+                      </div>
+
+                       <div className="p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-primary hover:border-primary transition-colors cursor-pointer min-h-[140px]">
+                           <span className="material-symbols-outlined text-3xl">add</span>
+                           <span className="text-sm font-bold">{t('profile.docs.add_btn')}</span>
+                       </div>
+                   </div>
+                </div>
+            )}
+            
+            {/* --- SETTINGS --- */}
+            {activeTab === 'settings' && (
+                <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+                   <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-800 pb-2">{t('profile.tabs.settings')}</h3>
+                   
+                   <button onClick={() => navigate('/settings')} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                      <div className="flex items-center gap-3">
+                         <span className="material-symbols-outlined text-slate-500">settings</span>
+                         <span className="font-bold text-slate-900 dark:text-white">{t('nav.settings')}</span>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-400">arrow_forward</span>
+                   </button>
+                    <button onClick={() => navigate('/notifications')} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                      <div className="flex items-center gap-3">
+                         <span className="material-symbols-outlined text-slate-500">notifications</span>
+                         <span className="font-bold text-slate-900 dark:text-white">{t('nav.notifications')}</span>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-400">arrow_forward</span>
+                   </button>
+                </div>
+            )}
+
+          </div>
+
+          <footer className="mt-8 text-center text-xs text-slate-400 max-w-2xl mx-auto pb-8">
+            {t('profile.footer')}
+          </footer>
         </div>
       </main>
 
-      {/* --- MODALES SÉCURITÉ --- */}
-      {/* PIN Modal */}
+      {/* MODAL PIN */}
       {modalOpen === 'pin' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-8 shadow-2xl text-center">
-                <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-500">
-                    <span className="material-symbols-outlined text-3xl">dialpad</span>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Code Secret</h3>
-                <p className="text-sm text-slate-500 mb-6">Définissez un code à 4 chiffres.</p>
-                <form onSubmit={(e) => handleSubmitSecurity(e, 'pin')} className="space-y-4">
-                    <input 
-                        type="text" 
-                        maxLength={4} 
-                        placeholder="----" 
-                        value={newPin}
-                        onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                        className="w-full text-center text-3xl tracking-[0.5em] font-black rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 text-slate-900 dark:text-white" 
-                        required 
-                    />
-                    <button type="submit" disabled={isLoading || newPin.length !== 4} className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-hover transition-colors disabled:opacity-50">
-                        {isLoading ? '...' : 'Définir'}
-                    </button>
-                    <button type="button" onClick={() => setModalOpen(null)} className="text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Annuler</button>
-                </form>
-            </div>
-        </div>
-      )}
-
-      {/* Password Modal (Visuel) */}
-      {modalOpen === 'password' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8 shadow-2xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Modifier le mot de passe</h3>
-                    <button onClick={() => setModalOpen(null)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
-                </div>
-                <form onSubmit={(e) => handleSubmitSecurity(e, 'password')} className="space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-8 shadow-2xl">
+                 <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">{t('profile.security.pin')}</h3>
+                    <button onClick={() => setModalOpen(null)}><span className="material-symbols-outlined text-slate-400">close</span></button>
+                 </div>
+                 <form onSubmit={(e) => handleSubmitSecurity(e, 'pin')} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nouveau mot de passe</label>
-                        <input type="password" required className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3 text-slate-900 dark:text-white" />
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nouveau Code (4 chiffres)</label>
+                        <input 
+                            type="password" 
+                            maxLength={4} 
+                            required 
+                            value={newPin} 
+                            onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 text-center text-2xl tracking-[0.5em] font-bold text-slate-900 dark:text-white"
+                        />
                     </div>
-                    <button type="submit" disabled={isLoading} className="w-full bg-primary text-white font-bold py-3 rounded-xl mt-4 hover:bg-primary-hover transition-colors">
-                        {isLoading ? '...' : 'Enregistrer'}
+                    <button type="submit" disabled={isLoading || newPin.length !== 4} className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-hover transition-colors disabled:opacity-50">
+                        {isLoading ? t('common.loading') : t('common.save')}
                     </button>
-                </form>
+                 </form>
             </div>
         </div>
       )}
 
-      {/* Security Footer */}
-      <footer className="mt-8 py-8 border-t border-slate-200 dark:border-slate-800 flex flex-col items-center gap-4 text-center px-4 pb-12 md:pb-8">
-        <div className="flex items-center gap-4 grayscale opacity-50">
-          <span className="text-xs font-bold uppercase text-slate-400">Certifié par</span>
-          <div className="bg-slate-300 dark:bg-slate-700 h-6 w-20 rounded-sm"></div>
-          <div className="bg-slate-300 dark:bg-slate-700 h-6 w-16 rounded-sm"></div>
-        </div>
-        <p className="text-slate-400 text-[11px] max-w-2xl">
-            Finanzas Investment est une plateforme régulée. Toutes vos données sont traitées dans le strict respect de la réglementation européenne sur la protection des données personnelles (RGPD).
-        </p>
-      </footer>
     </div>
   );
 };

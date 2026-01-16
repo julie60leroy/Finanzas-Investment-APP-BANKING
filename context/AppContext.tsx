@@ -1,7 +1,49 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { translations } from './translations';
 
 // --- TYPES ---
-export type Language = 'fr' | 'en';
+export type Language = 'fr' | 'en' | 'es' | 'de' | 'pt' | 'it';
+
+export interface CurrencyConfig {
+  code: string;
+  name: string;
+  flag: string;
+  rate: number; // Taux par rapport à 1 EUR
+}
+
+// Liste complète des devises demandées
+export const CURRENCIES: CurrencyConfig[] = [
+  { code: 'EUR', name: 'Euro', flag: '🇪🇺', rate: 1 },
+  { code: 'USD', name: 'US Dollar', flag: '🇺🇸', rate: 1.08 },
+  { code: 'GBP', name: 'British Pound', flag: '🇬🇧', rate: 0.85 },
+  { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭', rate: 0.95 },
+  { code: 'DKK', name: 'Danish Krone', flag: '🇩🇰', rate: 7.46 },
+  { code: 'NOK', name: 'Norwegian Krone', flag: '🇳🇴', rate: 11.45 },
+  { code: 'SEK', name: 'Swedish Krona', flag: '🇸🇪', rate: 11.25 },
+  { code: 'ISK', name: 'Icelandic Króna', flag: '🇮🇸', rate: 150.0 },
+  { code: 'PLN', name: 'Polish Złoty', flag: '🇵🇱', rate: 4.32 },
+  { code: 'HUF', name: 'Hungarian Forint', flag: '🇭🇺', rate: 395.5 },
+  { code: 'CZK', name: 'Czech Koruna', flag: '🇨🇿', rate: 25.30 },
+  { code: 'RON', name: 'Romanian Leu', flag: '🇷🇴', rate: 4.97 },
+  { code: 'BGN', name: 'Bulgarian Lev', flag: '🇧🇬', rate: 1.95 },
+  { code: 'ARS', name: 'Argentine Peso', flag: '🇦🇷', rate: 920.5 },
+  { code: 'BOB', name: 'Bolivian Boliviano', flag: '🇧🇴', rate: 7.50 },
+  { code: 'BRL', name: 'Brazilian Real', flag: '🇧🇷', rate: 5.45 },
+  { code: 'CLP', name: 'Chilean Peso', flag: '🇨🇱', rate: 1050.0 },
+  { code: 'COP', name: 'Colombian Peso', flag: '🇨🇴', rate: 4200.0 },
+  { code: 'PYG', name: 'Paraguayan Guaraní', flag: '🇵🇾', rate: 8000.0 },
+  { code: 'PEN', name: 'Peruvian Sol', flag: '🇵🇪', rate: 4.05 },
+  { code: 'UYU', name: 'Uruguayan Peso', flag: '🇺🇾', rate: 42.5 },
+  { code: 'VES', name: 'Venezuelan Bolívar', flag: '🇻🇪', rate: 39.5 },
+  { code: 'MXN', name: 'Mexican Peso', flag: '🇲🇽', rate: 18.20 },
+  { code: 'GTQ', name: 'Guatemalan Quetzal', flag: '🇬🇹', rate: 8.40 },
+  { code: 'HNL', name: 'Honduran Lempira', flag: '🇭🇳', rate: 26.8 },
+  { code: 'NIO', name: 'Nicaraguan Córdoba', flag: '🇳🇮', rate: 39.8 },
+  { code: 'CRC', name: 'Costa Rican Colón', flag: '🇨🇷', rate: 555.0 },
+  { code: 'PAB', name: 'Panamanian Balboa', flag: '🇵🇦', rate: 1.08 },
+  { code: 'CUP', name: 'Cuban Peso', flag: '🇨🇺', rate: 25.75 },
+  { code: 'DOP', name: 'Dominican Peso', flag: '🇩🇴', rate: 63.5 },
+];
 
 export interface Transaction {
   id: string;
@@ -9,10 +51,12 @@ export interface Transaction {
   name: string;
   icon: string;
   cat: string;
-  status: 'Complété' | 'En attente' | 'Échoué';
-  amt: number;
-  currency: string;
+  status: string;
+  amt: number; // Toujours stocké en EUR
+  currency: string; // Devise d'origine de la transaction (affichage seulement)
   beneficiaryDetails?: Beneficiary;
+  catKey?: string; 
+  statusKey?: string;
 }
 
 export interface User {
@@ -28,10 +72,10 @@ export interface User {
   securityPin: string;
   checkingIban: string;
   checkingAccountName: string;
-  overdraftLimit: number;
+  overdraftLimit: number; // Stocké en EUR
   accounts: {
-    checking: number;
-    savings: number;
+    checking: number; // Stocké en EUR
+    savings: number; // Stocké en EUR
   };
 }
 
@@ -56,8 +100,8 @@ export interface Card {
   status: 'active' | 'blocked';
   design: 'premium-red' | 'midnight-black';
   limits: {
-    payment: { current: number; max: number };
-    withdrawal: { current: number; max: number };
+    payment: { current: number; max: number }; // Stocké en EUR
+    withdrawal: { current: number; max: number }; // Stocké en EUR
   };
 }
 
@@ -68,139 +112,10 @@ export interface Notification {
   message: string;
   date: string;
   read: boolean;
+  translationKey?: string;
+  translationParams?: Record<string, string | number>;
+  templateId?: 'n1_login' | 'n2_transfer' | 'n3_tos'; 
 }
-
-// --- DICTIONNAIRE DE TRADUCTION ---
-const translations = {
-  fr: {
-    nav: {
-      dashboard: "Tableau de bord",
-      transactions: "Transactions",
-      transfers: "Virements",
-      cards: "Cartes",
-      notifications: "Notifications",
-      settings: "Paramètres",
-      profile: "Mon Profil",
-      admin: "Administration",
-      logout: "Déconnexion"
-    },
-    dashboard: {
-      welcome: "Bonjour",
-      date_format: "fr-FR",
-      wealth_estimated: "Patrimoine Total Estimé",
-      analysis: "Voir l'analyse détaillée",
-      quick_transfer_title: "Virement Rapide",
-      send_money: "Envoyer",
-      add_beneficiary: "Ajouter",
-      quick_transfer_action: "Nouveau Virement",
-      quick_card: "Gérer ma Carte",
-      quick_rib: "Copier mon RIB",
-      quick_docs: "Relevés & Docs",
-      rib_copied: "IBAN Copié !",
-      expenses_breakdown: "Répartition des Dépenses",
-      total_out: "Total Sorties",
-      recent_moves: "Derniers Mouvements",
-      see_all: "Tout voir",
-      no_tx: "Aucune transaction récente"
-    },
-    notifications: {
-      title: "Centre de Notifications",
-      mark_all: "Tout marquer comme lu",
-      tabs: {
-        all: "Toutes",
-        alerts: "Alertes",
-        transactions: "Transactions"
-      },
-      sections: {
-        today: "Aujourd'hui",
-        earlier: "Plus tôt"
-      },
-      empty: "Aucune notification pour le moment.",
-      settings_title: "Paramètres",
-      channels: "Canaux de diffusion",
-      categories: "Catégories d'alertes",
-      save_settings: "Sauvegarder les réglages"
-    },
-    settings: {
-      title: "Paramètres",
-      subtitle: "Gérez vos préférences et votre sécurité.",
-      tabs: {
-        profile: "Profil",
-        security: "Sécurité",
-        notifications: "Notifications",
-        region: "Langues et Région"
-      },
-      region_section: {
-        lang_title: "Langue de l'interface",
-        currency_title: "Devise de référence"
-      }
-    }
-  },
-  en: {
-    nav: {
-      dashboard: "Dashboard",
-      transactions: "Transactions",
-      transfers: "Transfers",
-      cards: "Cards",
-      notifications: "Notifications",
-      settings: "Settings",
-      profile: "My Profile",
-      admin: "Admin Panel",
-      logout: "Logout"
-    },
-    dashboard: {
-      welcome: "Hello",
-      date_format: "en-US",
-      wealth_estimated: "Estimated Total Wealth",
-      analysis: "See detailed analysis",
-      quick_transfer_title: "Quick Transfer",
-      send_money: "Send",
-      add_beneficiary: "Add New",
-      quick_transfer_action: "New Transfer",
-      quick_card: "Manage Card",
-      quick_rib: "Copy IBAN",
-      quick_docs: "Statements & Docs",
-      rib_copied: "IBAN Copied!",
-      expenses_breakdown: "Expenses Breakdown",
-      total_out: "Total Out",
-      recent_moves: "Recent Movements",
-      see_all: "See all",
-      no_tx: "No recent transactions"
-    },
-    notifications: {
-      title: "Notification Center",
-      mark_all: "Mark all as read",
-      tabs: {
-        all: "All",
-        alerts: "Alerts",
-        transactions: "Transactions"
-      },
-      sections: {
-        today: "Today",
-        earlier: "Earlier"
-      },
-      empty: "No notifications yet.",
-      settings_title: "Settings",
-      channels: "Notification Channels",
-      categories: "Alert Categories",
-      save_settings: "Save settings"
-    },
-    settings: {
-      title: "Settings",
-      subtitle: "Manage your preferences and security.",
-      tabs: {
-        profile: "Profile",
-        security: "Security",
-        notifications: "Notifications",
-        region: "Language & Region"
-      },
-      region_section: {
-        lang_title: "Interface Language",
-        currency_title: "Reference Currency"
-      }
-    }
-  }
-};
 
 interface AppContextType {
   user: User | null;
@@ -210,7 +125,10 @@ interface AppContextType {
   notifications: Notification[];
   isAuthenticated: boolean;
   language: Language;
+  currency: string; // La devise sélectionnée (ex: 'USD')
+  currentLocale: string;
   setLanguage: (lang: Language) => void;
+  setCurrency: (code: string) => void;
   t: (key: string) => string;
   login: (email: string) => void;
   logout: () => void;
@@ -222,34 +140,54 @@ interface AppContextType {
   updateCardLimits: (id: string, newLimits: Card['limits']) => void;
   markAllNotificationsAsRead: () => void;
   formatTxDate: (isoString: string) => string;
-  addNotification: (type: Notification['type'], title: string, message: string) => void;
+  addNotification: (type: Notification['type'], title: string, message: string, translationKey?: string, translationParams?: Record<string, string | number>) => void;
   injectFunds: (amount: number, currency: string, motif?: string) => void;
+  
+  // Nouveaux Helpers
+  formatGlobalMoney: (amountInEur: number) => string;
+  convertAmount: (amountInEur: number) => number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// --- LOCALE MAPPING ---
+const localeMap: Record<Language, string> = {
+  fr: 'fr-FR',
+  en: 'en-US',
+  es: 'es-ES',
+  de: 'de-DE',
+  pt: 'pt-PT',
+  it: 'it-IT'
+};
+
 // --- UTILS ---
-const formatTxDate = (isoString: string, lang: string = 'fr-FR') => {
+const formatTxDate = (isoString: string, lang: Language) => {
   const date = new Date(isoString);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  const timeAgo = {
+  const locales: Record<Language, { instant: string; min: string; hour: string; yesterday: string }> = {
     fr: { instant: "À l'instant", min: "Il y a {x} min", hour: "Il y a {x} h", yesterday: "Hier" },
-    en: { instant: "Just now", min: "{x} min ago", hour: "{x} h ago", yesterday: "Yesterday" }
+    en: { instant: "Just now", min: "{x} min ago", hour: "{x} h ago", yesterday: "Yesterday" },
+    es: { instant: "Ahora mismo", min: "Hace {x} min", hour: "Hace {x} h", yesterday: "Ayer" },
+    de: { instant: "Gerade eben", min: "Vor {x} Min", hour: "Vor {x} Std", yesterday: "Gestern" },
+    pt: { instant: "Agora mesmo", min: "Há {x} min", hour: "Há {x} h", yesterday: "Ontem" },
+    it: { instant: "Proprio ora", min: "{x} min fa", hour: "{x} h fa", yesterday: "Ieri" },
   };
-  const l = (timeAgo as any)[lang.split('-')[0]] || timeAgo.fr;
+
+  const l = locales[lang] || locales.fr;
+  const localeCode = localeMap[lang];
 
   if (diffInSeconds < 60) return l.instant;
-  if (diffInSeconds < 3600) return l.min.replace('{x}', Math.floor(diffInSeconds / 60));
-  if (diffInSeconds < 86400) return l.hour.replace('{x}', Math.floor(diffInSeconds / 3600));
+  if (diffInSeconds < 3600) return l.min.replace('{x}', Math.floor(diffInSeconds / 60).toString());
+  if (diffInSeconds < 86400) return l.hour.replace('{x}', Math.floor(diffInSeconds / 3600).toString());
   if (diffInSeconds < 172800) return l.yesterday;
   
-  return date.toLocaleDateString(lang, { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(localeCode, { day: 'numeric', month: 'short' });
 };
 
-// Initial Data
-const INITIAL_USER: User = {
+// Data Generation Helpers (inchangés sauf appelés dans context)
+const getInitialUser = (t: (key: string) => string): User => ({
   name: "Jean Dupont",
   email: "jean.dupont@finanzas.com",
   avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBVlfU9LT1bKOu6YiRJpGLlYM55G-ROq-Imcg0n3XaiPz4Iy8P0pdTm5EyTVq2q_KvY4VmF8wY8R_AmHux0K5GK8c-otO4U9RIjF6TrgtAREMs_IOy6l3zZTlPjAdvDPs4fEHnhG8BryjrP3x0xqqLOYgPVENwGW31j510yl19aLhKoSBSGfp5aZuZxHpxmk7w-Gooz3SRg_KEuZzIcqZrlO9xvqN5vm5kBZNPnox4vUcYIM-5BGb5N2taHq1n25De6od-5WYssKEg",
@@ -261,12 +199,100 @@ const INITIAL_USER: User = {
   jobTitle: "Cadre Supérieur",
   securityPin: "0000", 
   checkingIban: "FR76 3000 6000 0123 4567 8901 234",
-  checkingAccountName: "Compte Courant",
+  checkingAccountName: t('dashboard.accounts.checking'),
   overdraftLimit: 500,
   accounts: {
     checking: 2450.00,
     savings: 50000.00
   }
+});
+
+const getInitialTransactions = (t: (key: string) => string): Transaction[] => {
+  const txs: Transaction[] = [];
+  const now = new Date();
+  const merchants = [
+      { name: "Carrefour City", icon: "shopping_cart", catKey: 'dashboard.chart.food', min: -80, max: -15 },
+      { name: "Uber Eats", icon: "restaurant", catKey: 'dashboard.chart.food', min: -40, max: -15 },
+      { name: "Total Energies", icon: "local_gas_station", catKey: 'dashboard.chart.housing', min: -60, max: -40 },
+      { name: "Netflix", icon: "movie", catKey: 'dashboard.chart.leisure', min: -17.99, max: -17.99 },
+      { name: "Spotify", icon: "headphones", catKey: 'dashboard.chart.leisure', min: -10.99, max: -10.99 },
+      { name: "Apple Store", icon: "laptop_mac", catKey: 'High-Tech', min: -1200, max: -50 },
+      { name: "Salaire", icon: "work", catKey: 'Revenus', min: 3200, max: 3500 },
+      { name: "Loyer", icon: "home", catKey: 'dashboard.chart.housing', min: -1100, max: -1100 },
+      { name: "Amazon", icon: "shopping_bag", catKey: 'dashboard.chart.leisure', min: -150, max: -20 },
+      { name: "SNCF Connect", icon: "train", catKey: 'Transport', min: -120, max: -30 },
+      { name: "Pharmacie", icon: "local_pharmacy", catKey: 'Santé', min: -40, max: -10 },
+      { name: "Boulangerie", icon: "bakery_dining", catKey: 'dashboard.chart.food', min: -10, max: -2 },
+  ];
+
+  for (let i = 0; i < 100; i++) {
+      let dateOffset = 0;
+      if (i < 5) dateOffset = i * 1000 * 3600; 
+      else dateOffset = Math.floor(Math.random() * (90 * 24 * 3600 * 1000));
+
+      const date = new Date(now.getTime() - dateOffset).toISOString();
+      const merch = merchants[Math.floor(Math.random() * merchants.length)];
+      const amt = parseFloat((Math.random() * (merch.max - merch.min) + merch.min).toFixed(2));
+
+      txs.push({
+          id: `tx-${i}-${Date.now()}`,
+          date: date,
+          name: merch.name,
+          icon: merch.icon,
+          cat: t(merch.catKey),
+          catKey: merch.catKey,
+          status: t('common.success'),
+          statusKey: 'common.success',
+          amt: amt,
+          currency: 'EUR' // On stocke la devise d'origine de la transaction (ici supposée EUR pour simplifier)
+      });
+  }
+  return txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+const getSystemNotificationText = (id: string, lang: Language) => {
+    // ... (inchangé, voir bloc précédent pour le contenu complet)
+    const texts: any = {
+        n1_login: {
+            fr: { title: "Nouvelle connexion détectée", msg: "Un appareil \"iPhone 15 Pro\" s'est connecté depuis Lyon, France." },
+            en: { title: "New login detected", msg: "An \"iPhone 15 Pro\" device connected from Lyon, France." },
+            es: { title: "Nuevo inicio de sesión", msg: "Un dispositivo \"iPhone 15 Pro\" se conectó desde Lyon, Francia." },
+            de: { title: "Neue Anmeldung erkannt", msg: "Ein \"iPhone 15 Pro\" Gerät hat sich aus Lyon, Frankreich angemeldet." },
+            pt: { title: "Novo login detectado", msg: "Um dispositivo \"iPhone 15 Pro\" conectou-se de Lyon, França." },
+            it: { title: "Nuovo accesso rilevato", msg: "Un dispositivo \"iPhone 15 Pro\" si è connesso da Lione, Francia." }
+        },
+        n2_transfer: {
+            fr: { title: "Virement reçu", msg: "Vous avez reçu un virement instantané de 450,00 € de la part de Thomas Bernard." },
+            en: { title: "Transfer received", msg: "You received an instant transfer of €450.00 from Thomas Bernard." },
+            es: { title: "Transferencia recibida", msg: "Ha recibido una transferencia instantánea de 450,00 € de Thomas Bernard." },
+            de: { title: "Überweisung erhalten", msg: "Sie haben eine Sofortüberweisung von 450,00 € von Thomas Bernard erhalten." },
+            pt: { title: "Transferência recebida", msg: "Você recebeu uma transferência instantânea de 450,00 € de Thomas Bernard." },
+            it: { title: "Bonifico ricevuto", msg: "Hai ricevuto un bonifico istantaneo di 450,00 € da Thomas Bernard." }
+        },
+        n3_tos: {
+            fr: { title: "Mise à jour des CGU", msg: "Nos conditions générales d'utilisation ont été mises à jour. Veuillez les consulter." },
+            en: { title: "TOS Update", msg: "Our terms of service have been updated. Please review them." },
+            es: { title: "Actualización de CGU", msg: "Nuestras condiciones generales han sido actualizadas. Por favor revíselas." },
+            de: { title: "AGB Aktualisierung", msg: "Unsere Allgemeinen Geschäftsbedingungen wurden aktualisiert. Bitte überprüfen." },
+            pt: { title: "Atualização dos Termos", msg: "Nossos termos de serviço foram atualizados. Por favor, revise-os." },
+            it: { title: "Aggiornamento Termini", msg: "I nostri termini di servizio sono stati aggiornati. Si prega di prenderne visione." }
+        }
+    };
+    return texts[id]?.[lang] || texts[id]?.['fr'];
+};
+
+const getInitialNotifications = (lang: Language): Notification[] => {
+    // ... (inchangé, voir bloc précédent)
+    const now = new Date();
+    const t1 = getSystemNotificationText('n1_login', lang);
+    const t2 = getSystemNotificationText('n2_transfer', lang);
+    const t3 = getSystemNotificationText('n3_tos', lang);
+
+    return [
+        { id: 'n1', type: 'security', title: t1.title, message: t1.msg, date: new Date(now.getTime() - 1000 * 60 * 10).toISOString(), read: false, templateId: 'n1_login' },
+        { id: 'n2', type: 'transaction', title: t2.title, message: t2.msg, date: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(), read: false, templateId: 'n2_transfer' },
+        { id: 'n3', type: 'system', title: t3.title, message: t3.msg, date: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(), read: true, templateId: 'n3_tos' }
+    ];
 };
 
 const INITIAL_BENEFICIARIES: Beneficiary[] = [
@@ -304,59 +330,34 @@ const INITIAL_CARDS: Card[] = [
   }
 ];
 
-const generateTransactions = (): Transaction[] => {
-  const now = new Date();
-  const txs: Transaction[] = [];
-  txs.push({ id: 't1', date: new Date(now.getTime() - 1000 * 30).toISOString(), name: "Apple Store", icon: "laptop_mac", cat: "Électronique", status: "Complété", amt: -1299.00, currency: '€' });
-  txs.push({ id: 't2', date: new Date(now.getTime() - 1000 * 60 * 45).toISOString(), name: "Uber Eats", icon: "restaurant", cat: "Restauration", status: "En attente", amt: -25.50, currency: '€' });
-  txs.push({ id: 't3', date: new Date(now.getTime() - 1000 * 60 * 60 * 3).toISOString(), name: "Carrefour City", icon: "shopping_cart", cat: "Alimentation", status: "Complété", amt: -42.15, currency: '€' });
-  return txs;
-};
-const _REAL_INITIAL_TRANSACTIONS = generateTransactions();
-
-// --- RESTAURATION DES NOTIFICATIONS (SCÉNARIO) ---
-const generateNotifications = (): Notification[] => {
-    const now = new Date();
-    return [
-        {
-            id: 'n1',
-            type: 'security',
-            title: 'Nouvelle connexion détectée',
-            message: 'Un appareil "iPhone 15 Pro" s\'est connecté depuis Lyon, France.',
-            date: new Date(now.getTime() - 1000 * 60 * 10).toISOString(), // Il y a 10 min
-            read: false
-        },
-        {
-            id: 'n2',
-            type: 'transaction',
-            title: 'Virement reçu',
-            message: 'Vous avez reçu un virement instantané de 450,00 € de la part de Thomas Bernard.',
-            date: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(), // Il y a 2h
-            read: false
-        },
-        {
-            id: 'n3',
-            type: 'system',
-            title: 'Mise à jour des CGU',
-            message: 'Nos conditions générales d\'utilisation ont été mises à jour. Veuillez les consulter.',
-            date: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(), // Hier
-            read: true
-        }
-    ];
-};
-const INITIAL_NOTIFICATIONS = generateNotifications();
-
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
-  const [cards, setCards] = useState<Card[]>([]);
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(INITIAL_BENEFICIARIES);
+  const [cards, setCards] = useState<Card[]>(INITIAL_CARDS);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [language, setLanguage] = useState<Language>('fr');
+  const [currency, setCurrencyState] = useState<string>('EUR');
 
-  // --- FONCTION DE TRADUCTION ---
+  // --- HELPER CONVERSION ---
+  // Convertit un montant en EUR vers la devise sélectionnée
+  const convertAmount = (amountInEur: number): number => {
+      if (currency === 'EUR') return amountInEur;
+      const targetRate = CURRENCIES.find(c => c.code === currency)?.rate || 1;
+      return amountInEur * targetRate;
+  };
+
+  // --- HELPER FORMATAGE GLOBAL ---
+  // Affiche le montant converti avec le bon symbole et locale
+  const formatGlobalMoney = (amountInEur: number): string => {
+      const value = convertAmount(amountInEur);
+      return new Intl.NumberFormat(localeMap[language], {
+          style: 'currency',
+          currency: currency
+      }).format(value);
+  };
+
   const t = (path: string): string => {
     const keys = path.split('.');
     let current: any = translations[language];
@@ -367,25 +368,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return current;
   };
 
+  const replaceParams = (text: string, params?: Record<string, string | number>) => {
+      if (!params) return text;
+      let res = text;
+      for (const [key, value] of Object.entries(params)) {
+          res = res.replace(`{${key}}`, String(value));
+      }
+      return res;
+  };
+
+  const addNotification = (
+      type: Notification['type'], 
+      title: string, 
+      message: string, 
+      translationKey?: string, 
+      translationParams?: Record<string, string | number>
+  ) => {
+    const newNotif: Notification = {
+        id: `notif-${Date.now()}`,
+        type,
+        title,
+        message,
+        date: new Date().toISOString(),
+        read: false,
+        translationKey,
+        translationParams
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const handleSetLanguage = (lang: Language) => {
+      if (lang !== language) {
+          setLanguage(lang);
+          const newLangName = lang.toUpperCase();
+          addNotification('system', 'Language changed', `Language is now ${newLangName}`, 'language_changed', { lang: newLangName });
+      }
+  };
+
+  const setCurrency = (code: string) => {
+      if (code !== currency) {
+          setCurrencyState(code);
+          addNotification('system', 'Currency changed', `Currency is now ${code}`, 'currency_changed', { currency: code });
+      }
+  };
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    if (isAuthenticated) {
+        setTransactions(prevTxs => prevTxs.map(tx => {
+            let newCat = tx.cat;
+            let newStatus = tx.status;
+            if (tx.catKey) newCat = tx.catKey.includes('.') ? t(tx.catKey) : tx.catKey;
+            if (tx.statusKey === 'common.success') newStatus = t('common.success');
+            else if (tx.statusKey === 'status_pending') newStatus = language === 'fr' ? 'En attente' : 'Pending'; 
+            else if (tx.statusKey === 'admin.status_success') newStatus = t('admin.status_success');
+            return { ...tx, cat: newCat, status: newStatus };
+        }));
+
+        setUser(prevUser => {
+            if (!prevUser) return null;
+            return {
+                ...prevUser,
+                checkingAccountName: t('dashboard.accounts.checking'),
+            };
+        });
+        
+        setNotifications(prevNotifs => prevNotifs.map(n => {
+            if (n.templateId) {
+                const translated = getSystemNotificationText(n.templateId, language);
+                return { ...n, title: translated.title, message: translated.msg };
+            }
+            if (n.translationKey) {
+                const titleTemplate = t(`notif_templates.${n.translationKey}_title`);
+                const msgTemplate = t(`notif_templates.${n.translationKey}_msg`);
+                if (!titleTemplate.includes('notif_templates')) {
+                     return { ...n, title: replaceParams(titleTemplate, n.translationParams), message: replaceParams(msgTemplate, n.translationParams) };
+                }
+            }
+            return n;
+        }));
+    }
+  }, [language, isAuthenticated]);
+
   useEffect(() => {
     const storedAuth = localStorage.getItem('isAuth');
     if (storedAuth === 'true') {
       setIsAuthenticated(true);
-      setUser(INITIAL_USER);
-      setTransactions(_REAL_INITIAL_TRANSACTIONS);
-      setBeneficiaries(INITIAL_BENEFICIARIES);
+      setUser(getInitialUser(t));
+      setTransactions(getInitialTransactions(t));
       setCards(INITIAL_CARDS); 
-      setNotifications(INITIAL_NOTIFICATIONS);
+      setNotifications(getInitialNotifications('fr'));
     }
   }, []);
 
   const login = (email: string) => {
     setIsAuthenticated(true);
-    setUser({ ...INITIAL_USER, email });
-    setTransactions(_REAL_INITIAL_TRANSACTIONS);
+    setUser({ ...getInitialUser(t), email });
+    setTransactions(getInitialTransactions(t));
     setBeneficiaries(INITIAL_BENEFICIARIES);
     setCards(INITIAL_CARDS);
-    setNotifications(INITIAL_NOTIFICATIONS);
+    setNotifications(getInitialNotifications(language));
     localStorage.setItem('isAuth', 'true');
   };
 
@@ -395,68 +477,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('isAuth');
   };
 
-  // --- HELPER DE NOTIFICATION ---
-  const addNotification = (type: Notification['type'], title: string, message: string) => {
-    const newNotif: Notification = {
-        id: `notif-${Date.now()}`,
-        type,
-        title,
-        message,
-        date: new Date().toISOString(),
-        read: false
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-  };
-
   const performTransfer = (amount: number, recipientName: string, motif: string, beneficiaryDetails?: Beneficiary) => {
-      // Simuler le transfert
+      // NOTE: Le montant passé ici est supposé être dans la devise affichée.
+      // Pour stocker en EUR, on devrait le reconvertir inversement. 
+      // Pour cette démo, simplifions en disant que amount est en EUR pour les calculs internes.
       const newTx: Transaction = {
           id: `tx-${Date.now()}`,
           date: new Date().toISOString(),
           name: recipientName,
           icon: 'send',
-          cat: motif || 'Virement',
-          status: 'Complété',
+          cat: motif || t('transfers.success.title'),
+          status: t('common.success'),
+          statusKey: 'common.success',
           amt: -amount,
-          currency: '€',
+          currency: 'EUR',
           beneficiaryDetails
       };
-      setTransactions([newTx, ...transactions]);
+      setTransactions(prev => [newTx, ...prev]);
       if (user) {
-          setUser({
-              ...user,
-              accounts: {
-                  ...user.accounts,
-                  checking: user.accounts.checking - amount
-              }
-          });
+          setUser({ ...user, accounts: { ...user.accounts, checking: user.accounts.checking - amount } });
       }
-      // Notification
-      addNotification('transaction', 'Virement envoyé', `Votre virement de ${amount}€ vers ${recipientName} a été effectué.`);
+      addNotification('transaction', t('transfers.success.title'), `${t('transfers.amount.source')} ${amount}€ -> ${recipientName}.`, 'transfer_sent', { amount: amount, name: recipientName });
   };
 
   const addBeneficiary = (beneficiary: Omit<Beneficiary, 'id'>) => {
       const newB = { ...beneficiary, id: `b-${Date.now()}` };
       setBeneficiaries([...beneficiaries, newB]);
-      // Notification
-      addNotification('security', 'Nouveau bénéficiaire', `Le bénéficiaire ${beneficiary.name} a été ajouté à votre liste de confiance.`);
+      addNotification('security', t('transfers.fav_title'), `${beneficiary.name} ${t('common.add')}.`, 'beneficiary_added', { name: beneficiary.name });
   };
 
   const updateUser = (data: Partial<User>) => { 
       if(user) {
           setUser({...user, ...data}); 
-          // Logique de notification selon le champ modifié
           if (data.securityPin) {
-              addNotification('security', 'Sécurité mise à jour', 'Votre code secret pour les virements a été modifié.');
-          }
-          else if (data.email || data.phone || data.address) {
-               addNotification('system', 'Profil mis à jour', 'Vos coordonnées personnelles ont été modifiées.');
-          }
-          else if (data.checkingIban || data.checkingAccountName) {
-               addNotification('system', 'Compte modifié', 'Les détails de votre compte courant ont été mis à jour.');
-          }
-          else if (data.overdraftLimit) {
-               addNotification('system', 'Découvert autorisé', `Votre plafond de découvert est maintenant de ${data.overdraftLimit}€.`);
+              addNotification('security', t('profile.security.auth_title'), t('profile.security.modified'), 'pin_changed', {});
           }
       }
   };
@@ -476,73 +530,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           limits: { payment: { current: 0, max: 2000 }, withdrawal: { current: 0, max: 500 } }
       };
       setCards([...cards, newCard]);
-      addNotification('system', 'Nouvelle carte', `Votre carte ${type === 'physical' ? 'Physique' : 'Virtuelle'} a été créée avec succès.`);
+      addNotification('system', t('cards.new_card'), `${t('cards.new_card')} (${type})`, 'card_added', { type: type });
   };
   
   const toggleCardStatus = (id: string) => {
-      let newStatus = '';
+      let newStatusStr = '';
       setCards(cards.map(c => {
           if (c.id === id) {
-              newStatus = c.status === 'active' ? 'bloquée' : 'débloquée';
-              return { ...c, status: c.status === 'active' ? 'blocked' : 'active' };
+              const newStatus = c.status === 'active' ? 'blocked' : 'active';
+              newStatusStr = newStatus;
+              return { ...c, status: newStatus };
           }
           return c;
       }));
-      if (newStatus) {
-        addNotification('security', 'Statut Carte', `Votre carte a été ${newStatus} temporairement.`);
-      }
+      const key = newStatusStr === 'blocked' ? 'card_locked' : 'card_unlocked';
+      addNotification('security', t('cards.title'), t('cards.modal.info_update'), key, {});
   };
   
   const updateCardLimits = (id: string, newLimits: Card['limits']) => {
       setCards(cards.map(c => c.id === id ? { ...c, limits: newLimits } : c));
-      addNotification('security', 'Plafonds mis à jour', 'Les limites de paiement/retrait de votre carte ont été modifiées.');
+      addNotification('security', t('cards.limits.payment'), t('cards.modal.info_update'), 'limits_updated', {});
   };
   
   const markAllNotificationsAsRead = () => {
       setNotifications(notifications.map(n => ({ ...n, read: true })));
   };
 
-  // Fonction Admin pour injecter des fonds
   const injectFunds = (amount: number, currency: string, motif: string = "Injection Capital") => {
       if (user) {
-           setUser({
-              ...user,
-              accounts: {
-                  ...user.accounts,
-                  checking: user.accounts.checking + amount
-              }
-          });
+           setUser({ ...user, accounts: { ...user.accounts, checking: user.accounts.checking + amount } });
           const newTx: Transaction = {
             id: `tx-inj-${Date.now()}`,
             date: new Date().toISOString(),
-            name: "Trésorerie Centrale", // Nom affiché sur le relevé
+            name: t('admin.central_treasury'), 
             icon: "account_balance",
-            cat: motif, // Utilisation du motif personnalisé (ex: Dividendes)
-            status: "Complété",
+            cat: motif === "Injection Capital" ? t('admin.motif_compliance') : motif, 
+            catKey: motif === "Injection Capital" ? 'admin.motif_compliance' : undefined,
+            status: t('admin.status_success'),
+            statusKey: 'admin.status_success',
             amt: amount,
             currency: currency === 'USD' ? '$' : '€', 
-            beneficiaryDetails: {
-                id: 'admin-treasury',
-                name: 'Finanzas Trésorerie',
-                iban: 'FI76 9999 9999 9999 9999',
-                favorite: false,
-                bankName: 'Finanzas Central Bank - Administration'
-            }
+            beneficiaryDetails: { id: 'admin-treasury', name: 'Finanzas Treasury', iban: 'FI76 9999', favorite: false, bankName: 'Finanzas Central Bank' }
           };
-          setTransactions([newTx, ...transactions]);
-          // La notification reprend le motif pour être claire
-          addNotification('transaction', 'Fonds reçus', `Injection de capital de ${amount} ${currency === 'USD' ? '$' : '€'} reçue. Motif : ${motif}`);
+          setTransactions(prev => [newTx, ...prev]);
+          addNotification('transaction', t('admin.toast_success'), `${amount} ${currency} - ${motif}`, 'injection', { amount: amount, currency: currency, motif: motif });
       }
   };
 
   return (
     <AppContext.Provider value={{ 
       user, transactions, beneficiaries, cards, notifications, isAuthenticated, 
-      language, setLanguage, t,
+      language, setLanguage: handleSetLanguage, t, currentLocale: localeMap[language],
       login, logout, performTransfer, addBeneficiary, updateUser,
       addCard, toggleCardStatus, updateCardLimits, markAllNotificationsAsRead,
       formatTxDate: (d) => formatTxDate(d, language),
-      addNotification, injectFunds
+      addNotification, injectFunds,
+      currency, setCurrency, formatGlobalMoney, convertAmount
     }}>
       {children}
     </AppContext.Provider>

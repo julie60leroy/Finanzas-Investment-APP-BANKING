@@ -1,13 +1,21 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 
 const VirementSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useApp();
   const state = location.state || {};
   const amount = state.amount || 0;
   const beneficiary = state.beneficiary || { name: 'Bénéficiaire', iban: '---' }; 
   const motif = state.motif || "Virement";
+  
+  // Infos devises
+  const sourceCurrency = state.sourceCurrency || 'EUR';
+  const targetCurrency = state.targetCurrency || 'USD';
+  const rate = state.rate || 1;
+
   // On récupère aussi les autres données pour le reçu si disponibles
   const fullReceiptState = {
     amount,
@@ -15,7 +23,10 @@ const VirementSuccessPage: React.FC = () => {
     motif,
     date: state.date,
     fees: state.fees,
-    transferType: state.transferType
+    transferType: state.transferType,
+    sourceCurrency,
+    targetCurrency,
+    rate
   };
 
   return (
@@ -33,20 +44,20 @@ const VirementSuccessPage: React.FC = () => {
 
           {/* Heading */}
           <div className="mb-10 space-y-4">
-            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">Transfert Envoyé</h1>
+            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white lg:text-4xl">{t('transfers.success.title')}</h1>
             <p className="text-xl text-slate-500 dark:text-slate-400">
-              Votre virement de <span className="font-bold text-slate-900 dark:text-white">{amount} EUR</span> a été envoyé avec succès.
+              {t('transfers.success.msg')}
             </p>
           </div>
 
           {/* Receipt Card */}
           <div className="mb-12 overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_2px_12px_rgba(0,0,0,0.06)] text-left">
             <div className="p-8">
-              <h3 className="mb-6 text-xs font-bold uppercase tracking-widest text-slate-400">Résumé de l'opération</h3>
+              <h3 className="mb-6 text-xs font-bold uppercase tracking-widest text-slate-400">{t('transfers.confirm.summary')}</h3>
               <div className="space-y-4">
                 {/* Beneficiary */}
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
-                  <span className="text-slate-500 dark:text-slate-400">Bénéficiaire</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t('transfers.step1')}</span>
                   <div className="flex items-center gap-3">
                     {beneficiary.img ? (
                        <div 
@@ -64,31 +75,31 @@ const VirementSuccessPage: React.FC = () => {
 
                 {/* Amount Debited */}
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
-                  <span className="text-slate-500 dark:text-slate-400">Montant débité</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{amount} EUR</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t('transfers.confirm.sent')}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{amount} {sourceCurrency}</span>
                 </div>
 
                 {/* Motif */}
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
-                  <span className="text-slate-500 dark:text-slate-400">Motif</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t('transfers.amount.motif')}</span>
                   <span className="font-semibold text-slate-900 dark:text-white">{motif}</span>
                 </div>
 
                 {/* Exchange Rate */}
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
-                  <span className="text-slate-500 dark:text-slate-400">Taux de change</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">1 EUR = 1.0842 USD</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t('transfers.confirm.rate')}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">1 {sourceCurrency} = {rate.toFixed(4)} {targetCurrency}</span>
                 </div>
 
                 {/* Reception Date */}
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-4">
-                  <span className="text-slate-500 dark:text-slate-400">Réception prévue</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">Demain, 14 Octobre</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t('transfers.amount.arrival')}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{t('transfers.amount.tomorrow')}</span>
                 </div>
 
                 {/* Reference */}
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Référence</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t('common.reference')}</span>
                   <span className="font-mono text-sm font-medium text-slate-400">#TRX-{Math.floor(Math.random() * 10000)}</span>
                 </div>
               </div>
@@ -98,7 +109,7 @@ const VirementSuccessPage: React.FC = () => {
             <div className="bg-slate-50 dark:bg-slate-800/50 px-8 py-4">
               <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400">
                 <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                <span className="text-xs font-bold uppercase tracking-wider">Transaction sécurisée par Finanzas</span>
+                <span className="text-xs font-bold uppercase tracking-wider">{t('receipt.guarantee')}</span>
               </div>
             </div>
           </div>
@@ -110,26 +121,26 @@ const VirementSuccessPage: React.FC = () => {
               className="flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 text-white shadow-lg transition-all hover:bg-primary-hover active:scale-[0.98]"
             >
               <span className="material-symbols-outlined">download</span>
-              <span className="font-bold">Télécharger le reçu (PNG)</span>
+              <span className="font-bold">{t('transfers.success.download_receipt')}</span>
             </button>
             <button 
               onClick={() => navigate('/')} 
               className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 px-8 py-4 text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white active:scale-[0.98]"
             >
               <span className="material-symbols-outlined">dashboard</span>
-              <span className="font-bold">Retour au tableau de bord</span>
+              <span className="font-bold">{t('transfers.success.back_dashboard')}</span>
             </button>
           </div>
 
           <p className="mt-8 text-sm text-slate-400">
-            Un e-mail de confirmation a été envoyé à votre adresse habituelle.
+            {t('transfers.success.email_sent')}
           </p>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-100 dark:border-slate-800 py-6 text-center text-xs text-slate-400">
-        <p>© 2024 Finanzas Investment. Tous droits réservés.</p>
+        <p>{t('receipt.footer')}</p>
       </footer>
     </div>
   );

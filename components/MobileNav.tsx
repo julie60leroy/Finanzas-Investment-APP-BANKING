@@ -4,15 +4,15 @@ import { useApp } from '../context/AppContext';
 
 const MobileNav: React.FC = () => {
   const location = useLocation();
-  const { notifications } = useApp();
+  const { notifications, t } = useApp();
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const navItems = [
-    { path: "/", label: "Accueil", icon: "dashboard" },
-    { path: "/transactions", label: "Activité", icon: "receipt_long" },
-    { path: "/virement-beneficiary", label: "Virement", icon: "swap_horiz", highlight: true },
-    { path: "/cards", label: "Cartes", icon: "credit_card" },
-    { path: "/profile", label: "Profil", icon: "person" }
+    { path: "/", label: t('nav.home'), icon: "dashboard" },
+    { path: "/transactions", label: t('nav.activity'), icon: "receipt_long" },
+    { path: "/virement-beneficiary", label: t('nav.transfers'), icon: "swap_horiz", highlight: true },
+    { path: "/cards", label: t('nav.cards'), icon: "credit_card" },
+    { path: "/profile", label: t('nav.profile'), icon: "person" }
   ];
 
   return (
