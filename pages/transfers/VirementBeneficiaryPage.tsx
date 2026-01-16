@@ -148,8 +148,8 @@ const VirementBeneficiaryPage: React.FC = () => {
                         style={{ backgroundImage: `url("${b.img}")` }}
                       ></div>
                     ) : (
-                      <div className="size-12 md:size-14 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
-                        <span className="material-symbols-outlined text-3xl">person</span>
+                      <div className="size-12 md:size-14 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold text-xl">
+                        {b.name.charAt(0).toUpperCase()}
                       </div>
                     )}
                    

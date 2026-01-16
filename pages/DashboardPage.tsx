@@ -118,10 +118,16 @@ const DashboardPage: React.FC = () => {
                         className="flex flex-col items-center gap-2 cursor-pointer group min-w-[80px]"
                     >
                         <div className="relative">
-                            <div 
-                                className="size-14 rounded-full bg-cover bg-center border-2 border-white dark:border-slate-800 shadow-sm group-hover:scale-105 transition-transform"
-                                style={{ backgroundImage: `url("${b.img}")` }}
-                            ></div>
+                            {b.img ? (
+                                <div 
+                                    className="size-14 rounded-full bg-cover bg-center border-2 border-white dark:border-slate-800 shadow-sm group-hover:scale-105 transition-transform"
+                                    style={{ backgroundImage: `url("${b.img}")` }}
+                                ></div>
+                            ) : (
+                                <div className="size-14 rounded-full border-2 border-white dark:border-slate-800 shadow-sm group-hover:scale-105 transition-transform bg-slate-800 text-white flex items-center justify-center font-bold text-xl">
+                                    {b.name.charAt(0).toUpperCase()}
+                                </div>
+                            )}
                             <div className="absolute -bottom-1 -right-1 bg-primary text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
                                 {t('dashboard.send_money')}
                             </div>

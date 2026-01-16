@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -13,6 +13,7 @@ const StatementPage: React.FC = () => {
   const statementRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [scale, setScale] = useState(1);
 
   // --- Gestion des Dates ---
   const now = new Date();
@@ -21,7 +22,6 @@ const StatementPage: React.FC = () => {
   const statementRefId = `FIN-${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 
   // --- Pagination & Data ---
-  // On filtre ou on prend tout. Ici on prend tout pour l'exemple.
   const allTransactions = transactions;
   const totalPages = Math.ceil(allTransactions.length / ITEMS_PER_PAGE) || 1;
 
@@ -41,7 +41,6 @@ const StatementPage: React.FC = () => {
     .reduce((acc, t) => acc + t.amt, 0);
 
   const finalBalance = user?.accounts.checking || 0;
-  // Solde initial approximatif pour l'exemple (Solde final - mvmts)
   const initialBalance = finalBalance - totalCredits - totalDebits;
 
   // Données dynamiques
@@ -52,12 +51,41 @@ const StatementPage: React.FC = () => {
       return d.toLocaleDateString(currentLocale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  // --- RESPONSIVE SCALING ---
+  useEffect(() => {
+    const handleResize = () => {
+        const A4_WIDTH_PX = 794; // ~210mm à 96dpi
+        const padding = 32; // Marge de sécurité
+        const screenWidth = window.innerWidth;
+        
+        if (screenWidth < A4_WIDTH_PX + padding) {
+            const newScale = (screenWidth - padding) / A4_WIDTH_PX;
+            setScale(newScale);
+        } else {
+            setScale(1);
+        }
+    };
+
+    handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // --- NAVIGATION RETOUR ---
+  const handleBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate('/transactions');
+      }
+  };
+
   // --- EXPORT ---
   const handleDownloadPDF = async () => {
     if (!statementRef.current) return;
     setIsExporting(true);
     try {
-        // On capture le conteneur A4 exact
+        // On capture le conteneur A4 exact en ignorant le scale CSS actuel via pixelRatio si besoin
         const dataUrl = await toPng(statementRef.current, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 2 });
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = 210;
@@ -93,17 +121,17 @@ const StatementPage: React.FC = () => {
   const nextPage = () => setCurrentPage(p => Math.min(totalPages, p + 1));
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex flex-col items-center py-8 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex flex-col items-center py-4 md:py-8 font-sans text-slate-900 overflow-x-hidden">
       
       {/* --- Toolbar --- */}
-      <div className="w-full max-w-[210mm] mb-6 px-4 md:px-0 flex flex-col md:flex-row justify-between items-center gap-4">
-         <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors">
+      <div className="w-full max-w-[210mm] mb-6 px-4 md:px-0 flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
+         <div className="flex items-center gap-4 w-full md:w-auto">
+            <button onClick={handleBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors bg-white dark:bg-slate-800 md:bg-transparent px-3 py-2 md:px-0 rounded-lg shadow-sm md:shadow-none">
                 <span className="material-symbols-outlined">arrow_back</span>
                 <span className="font-bold text-sm">{t('common.back')}</span>
             </button>
-            <div className="h-6 w-px bg-slate-300 dark:bg-slate-700"></div>
-            <h1 className="font-bold text-slate-700 dark:text-slate-200">{t('statement.title')}</h1>
+            <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 hidden md:block"></div>
+            <h1 className="font-bold text-slate-700 dark:text-slate-200 hidden md:block">{t('statement.title')}</h1>
          </div>
 
          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
@@ -116,12 +144,12 @@ const StatementPage: React.FC = () => {
             </button>
          </div>
 
-         <div className="flex gap-2">
-            <button onClick={handleDownloadPDF} disabled={isExporting} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-sm disabled:opacity-70">
+         <div className="flex gap-2 w-full md:w-auto justify-end">
+            <button onClick={handleDownloadPDF} disabled={isExporting} className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all shadow-sm disabled:opacity-70 flex-1 md:flex-none">
                 <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                PDF (Page {currentPage})
+                PDF
             </button>
-            <button onClick={handleDownloadPNG} disabled={isExporting} className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all shadow-sm disabled:opacity-70">
+            <button onClick={handleDownloadPNG} disabled={isExporting} className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all shadow-sm disabled:opacity-70 flex-1 md:flex-none">
                 <span className="material-symbols-outlined text-[18px]">image</span>
                 PNG
             </button>
@@ -129,8 +157,14 @@ const StatementPage: React.FC = () => {
       </div>
 
       {/* --- A4 DOCUMENT CONTAINER --- */}
-      {/* Dimensions: 210mm x 297mm. White background. Fixed size. Centered. */}
-      <div className="overflow-auto w-full flex justify-center px-4">
+      {/* Container wrapper for Scaling */}
+      <div 
+         className="relative flex justify-center origin-top transition-transform duration-200 ease-out"
+         style={{ 
+             transform: `scale(${scale})`,
+             marginBottom: `-${(1 - scale) * 297}mm` // Compenser l'espace vide vertical
+         }}
+      >
         <div 
             ref={statementRef}
             className="bg-white text-slate-900 shadow-2xl relative flex flex-col"
@@ -139,7 +173,8 @@ const StatementPage: React.FC = () => {
                 height: '297mm', 
                 minWidth: '210mm',
                 minHeight: '297mm',
-                padding: '15mm' // Marges d'impression standard
+                padding: '15mm', // Marges d'impression standard
+                margin: '0 auto'
             }}
         >
             {/* 1. Header (Identique sur toutes les pages) */}

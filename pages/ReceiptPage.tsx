@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -13,6 +13,7 @@ const ReceiptPage: React.FC = () => {
   // Ref pour capturer le reçu (Format A4)
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [scale, setScale] = useState(1);
   
   // Data Recovery
   const amount = state.amount || 0;
@@ -45,6 +46,26 @@ const ReceiptPage: React.FC = () => {
   const sourceIban = user?.checkingIban ? `****${user.checkingIban.slice(-4)}` : '****4291';
   const accountName = user?.checkingAccountName || t('dashboard.accounts.checking');
 
+  // Gestion du redimensionnement pour mobile
+  useEffect(() => {
+    const handleResize = () => {
+        const A4_WIDTH_PX = 794; // ~210mm à 96dpi
+        const padding = 32; // Marge de sécurité
+        const screenWidth = window.innerWidth;
+        
+        if (screenWidth < A4_WIDTH_PX + padding) {
+            const newScale = (screenWidth - padding) / A4_WIDTH_PX;
+            setScale(newScale);
+        } else {
+            setScale(1);
+        }
+    };
+
+    handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Logique du bouton retour intelligente
   const handleBack = () => {
       if (window.history.length > 1) {
@@ -60,8 +81,8 @@ const ReceiptPage: React.FC = () => {
     if (!receiptRef.current) return;
     setIsExporting(true);
     try {
-        // Capture en haute résolution
-        const dataUrl = await toPng(receiptRef.current, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 2 });
+        // Capture en haute résolution (on ignore le scale CSS actuel pour l'export)
+        const dataUrl = await toPng(receiptRef.current, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 3 });
         
         if (format === 'png') {
             const link = document.createElement('a');
@@ -82,32 +103,32 @@ const ReceiptPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 font-sans text-slate-900 flex flex-col items-center py-8">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 font-sans text-slate-900 flex flex-col items-center py-4 md:py-8 overflow-x-hidden">
        
-       {/* Toolbar */}
-       <div className="w-full max-w-[210mm] mb-6 px-4 md:px-0 flex justify-between items-center">
+       {/* Toolbar - Fixe et responsive */}
+       <div className="w-full max-w-4xl px-4 mb-4 md:mb-6 flex flex-col md:flex-row justify-between items-center gap-4 z-10">
           <button 
                 onClick={handleBack} 
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+                className="self-start md:self-auto flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors bg-white dark:bg-slate-800 md:bg-transparent px-3 py-2 md:px-0 rounded-lg shadow-sm md:shadow-none"
              >
                 <span className="material-symbols-outlined">arrow_back</span>
                 <span className="font-bold text-sm">{t('common.back')}</span>
           </button>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full md:w-auto justify-end">
              <button 
                 onClick={() => handleDownload('pdf')}
                 disabled={isExporting}
-                className="flex items-center gap-2 bg-primary hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all disabled:opacity-70"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all disabled:opacity-70"
              >
                 <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                {t('receipt.download')} (PDF)
+                PDF
              </button>
 
              <button 
                 onClick={() => handleDownload('png')}
                 disabled={isExporting}
-                className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all disabled:opacity-70"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all disabled:opacity-70"
              >
                 <span className="material-symbols-outlined text-[18px]">image</span>
                 PNG
@@ -115,8 +136,14 @@ const ReceiptPage: React.FC = () => {
           </div>
        </div>
 
-       {/* A4 DOCUMENT - FIXED SIZE & CENTERED */}
-       <div className="overflow-auto w-full flex justify-center px-4">
+       {/* A4 DOCUMENT CONTAINER - SCALED FOR MOBILE */}
+       <div 
+         className="relative flex justify-center origin-top transition-transform duration-200 ease-out"
+         style={{ 
+             transform: `scale(${scale})`,
+             marginBottom: `-${(1 - scale) * 297}mm` // Compenser l'espace vide en bas dû au scale
+         }}
+       >
           <div 
             ref={receiptRef} 
             className="bg-white text-slate-900 shadow-2xl relative flex flex-col items-center"
@@ -125,7 +152,8 @@ const ReceiptPage: React.FC = () => {
                 height: '297mm', 
                 minWidth: '210mm',
                 minHeight: '297mm',
-                padding: '0' 
+                padding: '0',
+                margin: '0 auto' 
             }}
           >
              {/* Header & Logo */}
@@ -184,10 +212,10 @@ const ReceiptPage: React.FC = () => {
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{t('receipt.beneficiary_label')}</p>
                       <div className="flex items-center gap-3">
                          {beneficiary.img ? (
-                            <div className="size-10 rounded-full bg-slate-100 bg-cover bg-center" style={{backgroundImage: `url("${beneficiary.img}")`}}></div>
+                            <div className="size-10 rounded-full bg-slate-100 bg-cover bg-center shrink-0" style={{backgroundImage: `url("${beneficiary.img}")`}}></div>
                          ) : (
-                            <div className="size-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                                <span className="material-symbols-outlined">person</span>
+                            <div className="size-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-lg shrink-0">
+                                {beneficiary.name.charAt(0).toUpperCase()}
                             </div>
                          )}
                          <div className="overflow-hidden">
@@ -242,7 +270,7 @@ const ReceiptPage: React.FC = () => {
           </div>
        </div>
 
-       <footer className="py-8 text-center text-slate-400 text-xs no-print">
+       <footer className="py-8 text-center text-slate-400 text-xs no-print mt-auto">
           {t('receipt.footer')}
        </footer>
     </div>

@@ -65,8 +65,8 @@ const VirementSuccessPage: React.FC = () => {
                         style={{backgroundImage: `url("${beneficiary.img}")`}}
                       ></div>
                     ) : (
-                      <div className="size-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
-                          <span className="material-symbols-outlined text-lg">person</span>
+                      <div className="size-8 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold">
+                          {beneficiary.name.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <span className="font-semibold text-slate-900 dark:text-white">{beneficiary.name}</span>

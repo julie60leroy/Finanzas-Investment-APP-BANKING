@@ -153,8 +153,8 @@ const VirementConfirmPage: React.FC = () => {
                   {beneficiary.img ? (
                     <div className="size-12 overflow-hidden rounded-full border border-slate-100 dark:border-slate-700 bg-center bg-cover" style={{backgroundImage: `url("${beneficiary.img}")`}}></div>
                   ) : (
-                    <div className="size-12 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
-                        <span className="material-symbols-outlined text-2xl">person</span>
+                    <div className="size-12 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-white font-bold text-xl">
+                        {beneficiary.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div>
